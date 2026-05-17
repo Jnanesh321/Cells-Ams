@@ -10,6 +10,7 @@ export type AuthUser = {
   role: import("@prisma/client").Role;
   isActive: boolean;
   departmentId: number | null;
+  section: string | null;
 };
 
 declare global {
@@ -33,7 +34,7 @@ export async function auth(req: Request, _res: Response, next: NextFunction) {
   if (!token) return next(Object.assign(new Error("Unauthorized"), { status: 401 }));
 
   const payload = verifyAccessToken(token);
-  const userId = Number(payload.sub);
+  const userId = Number(payload.userId);
   if (!Number.isFinite(userId)) {
     return next(Object.assign(new Error("Unauthorized"), { status: 401 }));
   }
@@ -48,6 +49,11 @@ export async function auth(req: Request, _res: Response, next: NextFunction) {
       role: true,
       isActive: true,
       departmentId: true,
+      studentProfile: {
+        select: {
+          section: true,
+        },
+      },
     },
   });
 
@@ -55,7 +61,16 @@ export async function auth(req: Request, _res: Response, next: NextFunction) {
     return next(Object.assign(new Error("Unauthorized"), { status: 401 }));
   }
 
-  req.user = user;
+  req.user = {
+    id: user.id,
+    usn: user.usn,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    isActive: user.isActive,
+    departmentId: user.departmentId ?? payload.departmentId ?? null,
+    section: user.studentProfile?.section ?? null,
+  };
   next();
 }
 

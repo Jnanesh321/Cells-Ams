@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "vcet-ams-mobile",
+    "slug": "vcet-ams-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
+  }
+}

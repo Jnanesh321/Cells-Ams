@@ -1,29 +1,35 @@
 import jwt from "jsonwebtoken";
 import { env } from "../config/env";
-import { Role } from "@prisma/client";
 
-export type AccessTokenPayload = {
-  sub: string; // userId
-  role: Role;
-};
+export interface TokenPayload {
+  userId: number;
+  role: string;
+  departmentId: number | null;
+}
 
-export function signAccessToken(payload: AccessTokenPayload): string {
-  return jwt.sign(payload, env.JWT_ACCESS_SECRET as jwt.Secret, {
-    expiresIn: env.JWT_ACCESS_EXPIRES_IN as jwt.SignOptions["expiresIn"],
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export function generateAccessToken(payload: TokenPayload): string {
+  return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
+    expiresIn: (env.JWT_ACCESS_EXPIRES_IN || "15m") as string & jwt.SignOptions["expiresIn"],
   });
 }
 
-export function verifyAccessToken(token: string): AccessTokenPayload {
-  const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET);
-  if (typeof decoded !== "object" || decoded === null) {
-    throw Object.assign(new Error("Invalid token payload"), { status: 401 });
-  }
+const REFRESH_SECRET = env.JWT_REFRESH_SECRET || env.JWT_ACCESS_SECRET;
 
-  const { sub, role } = decoded as Partial<AccessTokenPayload>;
-  if (!sub || !role) {
-    throw Object.assign(new Error("Invalid token payload"), { status: 401 });
-  }
-
-  return { sub, role } as AccessTokenPayload;
+export function generateRefreshToken(userId: number): string {
+  return jwt.sign({ userId }, REFRESH_SECRET, {
+    expiresIn: env.JWT_REFRESH_EXPIRES_IN as string & jwt.SignOptions["expiresIn"],
+  });
 }
 
+export function verifyAccessToken(token: string): TokenPayload {
+  return jwt.verify(token, env.JWT_ACCESS_SECRET) as TokenPayload;
+}
+
+export function verifyRefreshToken(token: string): { userId: number } {
+  return jwt.verify(token, REFRESH_SECRET) as { userId: number };
+}

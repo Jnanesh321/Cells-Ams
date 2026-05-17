@@ -1,0 +1,163 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  FlatList,
+  Pressable,
+  RefreshControl,
+  Text,
+  View,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import API from '../../services/api';
+import { useAuthStore } from '../../store/auth';
+import Card from '../../components/Card';
+import Loader from '../../components/Loader';
+
+type CollegeAnalyticsRow = {
+  deptCode: string;
+  deptName: string;
+  studentCount: number;
+  avgAttendance: number;
+  avgIA: number;
+};
+
+function attendanceColor(attendance: number): string {
+  if (attendance < 70) return '#ef4444';
+  if (attendance < 85) return '#f59e0b';
+  return '#10b981';
+}
+
+function barWidth(attendance: number) {
+  return `${Math.max(0, Math.min(100, attendance))}%` as any;
+}
+
+const DashboardScreen = () => {
+  const navigation = useNavigation<any>();
+  const { user } = useAuthStore();
+  const [rows, setRows] = useState<CollegeAnalyticsRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchAnalytics = useCallback(async () => {
+    const response = await API.get('/analytics/college');
+    const data = Array.isArray(response.data?.data) ? response.data.data : [];
+    setRows(data as CollegeAnalyticsRow[]);
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    void (async () => {
+      if (!mounted) return;
+      setLoading(true);
+      try {
+        await fetchAnalytics();
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [fetchAnalytics]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    void fetchAnalytics().finally(() => setRefreshing(false));
+  }, [fetchAnalytics]);
+
+  const summary = useMemo(() => {
+    const studentCount = rows.reduce((sum, row) => sum + row.studentCount, 0);
+    const avgAttendance = rows.length
+      ? rows.reduce((sum, row) => sum + row.avgAttendance, 0) / rows.length
+      : 0;
+    return {
+      studentCount,
+      avgAttendance,
+    };
+  }, [rows]);
+
+  if (loading && !refreshing) {
+    return <Loader />;
+  }
+
+  return (
+    <View className="flex-1 bg-slate-950">
+      <View className="px-4 pt-4 pb-2">
+        <Text className="text-slate-400 text-xs uppercase tracking-[0.2em]">Principal Dashboard</Text>
+        <Text className="text-white text-2xl font-bold mt-1">{user?.name ?? 'Principal'}</Text>
+        <Text className="text-slate-300 text-sm mt-1">College analytics overview</Text>
+      </View>
+
+      <View className="px-4 mb-2 flex-row gap-3">
+        <Card className="flex-1 bg-slate-900 border-slate-800">
+          <Text className="text-slate-400 text-xs uppercase tracking-wider">Departments</Text>
+          <Text className="text-white text-3xl font-bold mt-2">{rows.length}</Text>
+        </Card>
+        <Card className="flex-1 bg-slate-900 border-slate-800">
+          <Text className="text-slate-400 text-xs uppercase tracking-wider">Students</Text>
+          <Text className="text-cyan-300 text-3xl font-bold mt-2">{summary.studentCount}</Text>
+        </Card>
+        <Card className="flex-1 bg-slate-900 border-slate-800">
+          <Text className="text-slate-400 text-xs uppercase tracking-wider">Avg Attendance</Text>
+          <Text className="text-emerald-300 text-3xl font-bold mt-2">{summary.avgAttendance.toFixed(1)}%</Text>
+        </Card>
+      </View>
+
+      <FlatList
+        data={rows}
+        keyExtractor={(item) => item.deptCode}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fbbf24" />}
+        ItemSeparatorComponent={() => <View className="h-3" />}
+        renderItem={({ item }) => {
+          const color = attendanceColor(item.avgAttendance);
+
+          return (
+            <Pressable onPress={() => navigation.navigate('DeptDetailScreen', { deptId: item.deptCode })}>
+              <Card className="bg-slate-900 border-slate-800">
+                <View className="flex-row items-start justify-between gap-3">
+                  <View className="flex-1">
+                    <Text className="text-white text-lg font-bold">{item.deptName}</Text>
+                    <Text className="text-slate-400 text-xs uppercase tracking-wider mt-1">
+                      {item.deptCode}
+                    </Text>
+                    <Text className="text-slate-300 text-sm mt-3">
+                      {item.studentCount} students
+                    </Text>
+                  </View>
+
+                  <View className="items-end">
+                    <View className="rounded-full bg-cyan-500/10 border border-cyan-500/30 px-3 py-1">
+                      <Text className="text-cyan-200 text-xs font-semibold">IA Avg {item.avgIA.toFixed(1)}</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View className="mt-4">
+                  <View className="flex-row justify-between mb-2">
+                    <Text className="text-slate-400 text-xs">Attendance</Text>
+                    <Text className="text-slate-300 text-xs font-semibold">{item.avgAttendance.toFixed(1)}%</Text>
+                  </View>
+                  <View className="h-3 rounded-full bg-slate-800 overflow-hidden">
+                    <View
+                      className="h-full rounded-full"
+                      style={{ width: barWidth(item.avgAttendance), backgroundColor: color }}
+                    />
+                  </View>
+                </View>
+              </Card>
+            </Pressable>
+          );
+        }}
+        ListEmptyComponent={
+          <Card className="bg-slate-900 border-slate-800">
+            <Text className="text-slate-400">No analytics available.</Text>
+          </Card>
+        }
+      />
+    </View>
+  );
+};
+
+export default DashboardScreen;

@@ -1,2 +1,12 @@
 .aider*
 .env
+node_modules
+dist/
+.expo/
+.idea/
+.vscode/
+*.tsbuildinfo
+app-example
+.backend.err
+.backend.log
+test-export/

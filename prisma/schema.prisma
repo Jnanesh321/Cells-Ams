@@ -13,6 +13,8 @@ enum Role {
   FACULTY
   HOD
   PRINCIPAL
+  ADMIN
+  ADMISSION_CELL
 }
 
 enum AttendanceStatus {
@@ -22,37 +24,45 @@ enum AttendanceStatus {
 }
 
 model Department {
-  id       Int       @id @default(autoincrement())
-  name     String
-  code     String    @unique
-  users    User[]
-  subjects Subject[]
+  id        Int       @id @default(autoincrement())
+  name      String
+  code      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  users     User[]
+  subjects  Subject[]
+  notices   Notice[]
+  dayOverrides DayOverride[]
 
   @@map("departments")
 }
 
 model User {
-  id           Int         @id @default(autoincrement())
-  usn          String      @unique
-  name         String
-  email        String?     @unique
-  passwordHash String
-  role         Role
-  isActive     Boolean     @default(true)
-  departmentId Int?
-  department   Department? @relation(fields: [departmentId], references: [id])
+  id             Int       @id @default(autoincrement())
+  usn            String    @unique
+  name           String
+  email          String?   @unique
+  passwordHash   String
+  role           Role
+  isActive       Boolean   @default(true)
+  departmentId   Int?
+  department     Department? @relation(fields: [departmentId], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  studentProfile StudentProfile?
-  facultyProfile FacultyProfile?
-  parentLinks    ParentStudent[] @relation("ParentLinks")
-  childLinks     ParentStudent[] @relation("StudentLinks")
-  refreshTokens  RefreshToken[]
-  markedAttendance AttendanceRecord[] @relation("MarkedBy")
-  enteredMarks     CIEMark[]          @relation("EnteredBy")
-  postedNotices    Notice[]           @relation("PostedBy")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  studentProfile    StudentProfile?
+  facultyProfile    FacultyProfile?
+  parentLinks       ParentStudent[]   @relation("ParentLinks")
+  childLinks        ParentStudent[]    @relation("StudentLinks")
+  refreshTokens     RefreshToken[]
+  markedAttendance  AttendanceRecord[] @relation("MarkedBy")
+  enteredIAMarks    IAMark[]           @relation("EnteredIAMarks")
+  assignedClasses   ClassAssignment[]  @relation("AssignedBy")
+  postedNotices     Notice[]           @relation("PostedBy")
+  enteredAssignmentMarks AssignmentMark[] @relation("EnteredAssignmentMarks")
+  finalizedCIE      CIESummary[]       @relation("FinalizedCIE")
+  exemptedDetentions DetentionRecord[]  @relation("ExemptedDetention")
+  birthdayVisibility BirthdayVisibility?
 
   @@map("users")
 }
@@ -75,20 +85,26 @@ model StudentProfile {
   semester  String
   section   String
   batch     String @default("2021-2025")
+  dateOfBirth DateTime? @db.Date
 
-  attendance AttendanceRecord[]
-  marks      CIEMark[]
+  attendance           AttendanceRecord[]
+  iaMarks              IAMark[]
+  assignmentMarks      AssignmentMark[]
+  cieSummaries         CIESummary[]
+  detentionRecords     DetentionRecord[]
 
   @@map("student_profiles")
 }
 
 model FacultyProfile {
-  id      Int    @id @default(autoincrement())
-  userId  Int    @unique
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          Int    @id @default(autoincrement())
+  userId      Int    @unique
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   designation String @default("Assistant Professor")
+  dateOfBirth DateTime? @db.Date
 
-  mappings SubjectMapping[]
+  subjectMappings  SubjectMapping[]
+  classAssignments ClassAssignment[]
 
   @@map("faculty_profiles")
 }
@@ -112,10 +128,16 @@ model Subject {
   credits      Int        @default(4)
   departmentId Int
   department   Department @relation(fields: [departmentId], references: [id])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
-  mappings   SubjectMapping[]
-  attendance AttendanceRecord[]
-  marks      CIEMark[]
+  subjectMappings  SubjectMapping[]
+  attendance       AttendanceRecord[]
+  iaMarks          IAMark[]
+  classAssignments ClassAssignment[]
+  assignmentMarks  AssignmentMark[]
+  cieSummaries     CIESummary[]
+  timetableEntries TimetableEntry[]
 
   @@map("subjects")
 }
@@ -126,8 +148,10 @@ model SubjectMapping {
   facultyProfileId Int
   section          String
   academicYear     String
-  subject          Subject        @relation(fields: [subjectId], references: [id])
-  faculty          FacultyProfile @relation(fields: [facultyProfileId], references: [id])
+  createdAt        DateTime       @default(now())
+
+  subject Subject        @relation(fields: [subjectId], references: [id])
+  faculty FacultyProfile @relation(fields: [facultyProfileId], references: [id])
 
   @@unique([subjectId, section, academicYear])
   @@map("subject_mappings")
@@ -140,11 +164,12 @@ model AttendanceRecord {
   date             DateTime         @db.Date
   status           AttendanceStatus
   markedByUserId   Int
-  studentProfile   StudentProfile   @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
-  subject          Subject          @relation(fields: [subjectId], references: [id])
-  markedBy         User             @relation("MarkedBy", fields: [markedByUserId], references: [id])
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
-  createdAt DateTime @default(now())
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  subject        Subject        @relation(fields: [subjectId], references: [id])
+  markedBy       User           @relation("MarkedBy", fields: [markedByUserId], references: [id])
 
   @@unique([studentProfileId, subjectId, date])
   @@index([studentProfileId])
@@ -152,48 +177,259 @@ model AttendanceRecord {
   @@map("attendance_records")
 }
 
-model CIEMark {
-  id               Int            @id @default(autoincrement())
+model IAMark {
+  id               Int      @id @default(autoincrement())
   studentProfileId Int
   subjectId        Int
-  cieNumber        Int
+  iaNumber         Int
   marksObtained    Float
-  maxMarks         Float          @default(50)
+  maxMarks         Float    @default(30)
   enteredByUserId  Int
-  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
-  subject          Subject        @relation(fields: [subjectId], references: [id])
-  enteredBy        User           @relation("EnteredBy", fields: [enteredByUserId], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  subject        Subject        @relation(fields: [subjectId], references: [id])
+  enteredBy      User           @relation("EnteredIAMarks", fields: [enteredByUserId], references: [id])
 
-  @@unique([studentProfileId, subjectId, cieNumber])
+  @@unique([studentProfileId, subjectId, iaNumber])
   @@index([studentProfileId])
-  @@map("cie_marks")
+  @@map("ia_marks")
 }
 
 model Notice {
-  id             Int      @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())
   title          String
-  content        String   @db.Text
+  content        String    @db.Text
   targetRole     Role?
   departmentId   Int?
   postedByUserId Int
-  isActive       Boolean  @default(true)
-  postedBy       User     @relation("PostedBy", fields: [postedByUserId], references: [id])
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  createdAt DateTime @default(now())
+  department Department? @relation(fields: [departmentId], references: [id])
+  postedBy   User        @relation("PostedBy", fields: [postedByUserId], references: [id])
 
+  @@index([targetRole])
+  @@index([departmentId])
   @@map("notices")
 }
 
 model AcademicCalendar {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
   description String?
-  startDate   DateTime @db.Date
+  startDate   DateTime  @db.Date
   endDate     DateTime? @db.Date
   type        String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@map("academic_calendar")
+}
+
+model ClassAssignment {
+  id               Int      @id @default(autoincrement())
+  facultyProfileId Int
+  subjectId        Int
+  section          String
+  semester         String
+  academicYear     String
+  isActive         Boolean  @default(true)
+  assignedByUserId Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  faculty    FacultyProfile @relation(fields: [facultyProfileId], references: [id])
+  subject    Subject        @relation(fields: [subjectId], references: [id])
+  assignedBy User           @relation("AssignedBy", fields: [assignedByUserId], references: [id])
+
+  @@unique([subjectId, section, academicYear])
+  @@index([facultyProfileId, isActive])
+  @@map("class_assignments")
+}
+
+model RollNumberSequence {
+  id         Int    @id @default(autoincrement())
+  department String
+  year       Int
+  lastRollNo Int    @default(0)
+
+  @@unique([department, year])
+  @@map("roll_number_sequences")
+}
+
+model StudentDraft {
+  id            Int      @id @default(autoincrement())
+  rollNo        String   @unique
+  name          String
+  gender        String   @default("MALE")
+  phone         String?
+  parentPhone   String?
+  admissionType String   @default("CET")
+  department    String
+  section       String
+  mappedUSN     String?
+  batchId       String?
+  academicYear  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([department, academicYear])
+  @@index([mappedUSN])
+  @@map("student_drafts")
+}
+
+model AdmissionBatch {
+  id         String   @id
+  department String
+  year       Int
+  section    String
+  intakeSize Int
+  startRollNo Int
+  endRollNo  Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([department, year])
+  @@map("admission_batches")
+}
+
+model AssignmentMark {
+  id               Int      @id @default(autoincrement())
+  studentProfileId Int
+  subjectId        Int
+  assignmentNumber Int
+  marksObtained    Float
+  maxMarks         Float    @default(10)
+  enteredByUserId  Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  subject        Subject        @relation(fields: [subjectId], references: [id])
+  enteredBy      User           @relation("EnteredAssignmentMarks", fields: [enteredByUserId], references: [id])
+
+  @@unique([studentProfileId, subjectId, assignmentNumber])
+  @@index([studentProfileId])
+  @@map("assignment_marks")
+}
+
+model CIESummary {
+  id               Int      @id @default(autoincrement())
+  studentProfileId Int
+  subjectId        Int
+  iaBestTwo        Float    @default(0)
+  cieFromIA        Float    @default(0)
+  assignmentTotal  Float    @default(0)
+  cieTotal         Float    @default(0)
+  isEligible       Boolean  @default(true)
+  finalized        Boolean  @default(false)
+  finalizedByUserId Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  subject        Subject        @relation(fields: [subjectId], references: [id])
+  finalizedBy    User?          @relation("FinalizedCIE", fields: [finalizedByUserId], references: [id])
+
+  @@unique([studentProfileId, subjectId])
+  @@index([studentProfileId])
+  @@map("cie_summaries")
+}
+
+model DetentionRecord {
+  id               Int      @id @default(autoincrement())
+  studentProfileId Int
+  academicYear     String
+  semester         String
+  isDetained       Boolean  @default(false)
+  detentionReasons String[]
+  attendancePercent Float   @default(0)
+  cieTotal         Float    @default(0)
+  exempted         Boolean  @default(false)
+  exemptedByUserId Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  exemptedBy     User?          @relation("ExemptedDetention", fields: [exemptedByUserId], references: [id])
+
+  @@unique([studentProfileId, academicYear, semester])
+  @@index([academicYear, semester])
+  @@map("detention_records")
+}
+
+// ========= ACADEMIC DAY SYSTEM =========
+
+model AcademicDayState {
+  id             Int      @id @default(autoincrement())
+  currentDay     Int      @default(1)
+  lastUpdated    DateTime @updatedAt
+  academicYear   String   @default("2025-2026")
+  isActive       Boolean  @default(true)
+
+  @@map("academic_day_state")
+}
+
+model DayOverride {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @db.Date
+  dayType     String   // "holiday" | "exam" | "suspended" | "event" | "working"
+  title       String?
+  departmentId Int?
+  department  Department? @relation(fields: [departmentId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([date])
+  @@index([departmentId])
+  @@map("day_overrides")
+}
+
+model Period {
+  id        Int      @id @default(autoincrement())
+  name      String   // "Period 1", "Period 2", etc.
+  startTime String   // "09:00"
+  endTime   String   // "09:50"
+  type      String   @default("lecture") // "lecture" | "lab"
+  order     Int      // 1, 2, 3...
+
+  timetableEntries TimetableEntry[]
+  @@map("periods")
+}
+
+model TimetableEntry {
+  id         Int      @id @default(autoincrement())
+  dayNumber  Int      // 1-6
+  periodId   Int
+  subjectId  Int
+  section    String
+  semester   String
+  academicYear String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  period  Period  @relation(fields: [periodId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
+
+  @@unique([dayNumber, periodId, section, academicYear])
+  @@index([dayNumber, section])
+  @@index([subjectId])
+  @@map("timetable_entries")
+}
+
+// ========= BIRTHDAY SYSTEM =========
+
+model BirthdayVisibility {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  visible   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("birthday_visibility")
 }

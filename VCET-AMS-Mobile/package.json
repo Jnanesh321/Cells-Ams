@@ -17,6 +17,7 @@
     "@types/pdfkit": "^0.17.6",
     "axios": "^1.16.0",
     "expo": "^54.0.34",
+    "expo-build-properties": "~1.0.10",
     "expo-secure-store": "~15.0.8",
     "expo-status-bar": "~3.0.9",
     "nativewind": "^4.1.23",

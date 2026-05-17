@@ -1,19 +1,34 @@
 {
   "expo": {
-    "name": "vcet-ams-mobile",
+    "name": "VCET AMS",
     "slug": "vcet-ams-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
     "android": {
+      "package": "com.vcet.ams",
       "adaptiveIcon": {
-        "backgroundColor": "#ffffff"
-      }
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundColor": "#0f172a"
+      },
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "bundler": "metro"
     },
     "plugins": [
-      "expo-secure-store"
-    ]
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "supportsTablet": false
+    }
   }
 }

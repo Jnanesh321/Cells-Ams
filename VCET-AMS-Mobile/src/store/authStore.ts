@@ -1,10 +1,12 @@
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import type { UserRole } from '../types';
 
 const TOKEN_KEY = 'vcet.auth.token';
 const REFRESH_TOKEN_KEY = 'vcet.auth.refreshToken';
 const USER_KEY = 'vcet.auth.user';
+const FALLBACK_PREFIX = 'fallback:';
 
 export type AuthUser = {
   id: string;
@@ -41,31 +43,77 @@ type AuthStoreState = AuthSnapshot & {
   logout: () => Promise<void>;
 };
 
+function isSecureStoreAvailable(): boolean {
+  try {
+    return !!SecureStore;
+  } catch {
+    return false;
+  }
+}
+
+async function secureStoreGet(key: string): Promise<string | null> {
+  try {
+    return await SecureStore.getItemAsync(key);
+  } catch {
+    try {
+      return await AsyncStorage.getItem(FALLBACK_PREFIX + key);
+    } catch {
+      return null;
+    }
+  }
+}
+
+async function secureStoreSet(key: string, value: string): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(key, value);
+  } catch {
+    try {
+      await AsyncStorage.setItem(FALLBACK_PREFIX + key, value);
+    } catch {
+    }
+  }
+}
+
+async function secureStoreDelete(key: string): Promise<void> {
+  try {
+    await SecureStore.deleteItemAsync(key);
+  } catch {
+    try {
+      await AsyncStorage.removeItem(FALLBACK_PREFIX + key);
+    } catch {
+    }
+  }
+  try {
+    await AsyncStorage.removeItem(FALLBACK_PREFIX + key);
+  } catch {
+  }
+}
+
 async function persistAuthSnapshot(snapshot: AuthSnapshot) {
   if (snapshot.token) {
-    await SecureStore.setItemAsync(TOKEN_KEY, snapshot.token);
+    await secureStoreSet(TOKEN_KEY, snapshot.token);
   } else {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await secureStoreDelete(TOKEN_KEY);
   }
 
   if (snapshot.refreshToken) {
-    await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, snapshot.refreshToken);
+    await secureStoreSet(REFRESH_TOKEN_KEY, snapshot.refreshToken);
   } else {
-    await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+    await secureStoreDelete(REFRESH_TOKEN_KEY);
   }
 
   if (snapshot.user) {
-    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(snapshot.user));
+    await secureStoreSet(USER_KEY, JSON.stringify(snapshot.user));
   } else {
-    await SecureStore.deleteItemAsync(USER_KEY);
+    await secureStoreDelete(USER_KEY);
   }
 }
 
 async function readAuthSnapshot(): Promise<AuthSnapshot> {
   const [token, refreshToken, userJson] = await Promise.all([
-    SecureStore.getItemAsync(TOKEN_KEY),
-    SecureStore.getItemAsync(REFRESH_TOKEN_KEY),
-    SecureStore.getItemAsync(USER_KEY),
+    secureStoreGet(TOKEN_KEY),
+    secureStoreGet(REFRESH_TOKEN_KEY),
+    secureStoreGet(USER_KEY),
   ]);
 
   let user: AuthUser | null = null;

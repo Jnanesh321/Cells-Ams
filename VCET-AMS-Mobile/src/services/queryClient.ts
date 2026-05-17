@@ -12,7 +12,8 @@ export type CachedAxiosResponse<T = unknown> = {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 0,
+      retry: 2,
+      staleTime: 1000 * 60 * 2,
     },
   },
 });

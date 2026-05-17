@@ -68,7 +68,7 @@ export default function HodFacultyScreen() {
       <FlatList
         className="px-4"
         data={faculty}
-        keyExtractor={(item: any) => item.id ?? Math.random().toString()}
+        keyExtractor={(item: any, index: number) => String(item.id ?? index)}
         renderItem={renderItem}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#a855f7" />}
         ListEmptyComponent={

@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import StudentDashboardScreen from '../screens/student/DashboardScreen';
 import StudentAttendanceScreen from '../screens/student/AttendanceScreen';
 import StudentMarksScreen from '../screens/student/MarksScreen';
@@ -25,12 +26,34 @@ const ProfileScreen = () => {
 const StudentNavigator = () => {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+            Dashboard: focused ? 'grid' : 'grid-outline',
+            Attendance: focused ? 'calendar' : 'calendar-outline',
+            Marks: focused ? 'bar-chart' : 'bar-chart-outline',
+            Notices: focused ? 'notifications' : 'notifications-outline',
+            Profile: focused ? 'person' : 'person-outline',
+          };
+          return (
+            <Ionicons
+              name={icons[route.name] ?? 'ellipse-outline'}
+              size={size}
+              color={color}
+            />
+          );
+        },
+        tabBarActiveTintColor: '#6366F1',
+        tabBarInactiveTintColor: '#475569',
+        tabBarStyle: {
+          backgroundColor: '#0F172A',
+          borderTopColor: '#1E293B',
+          borderTopWidth: 1,
+          paddingBottom: 4,
+          height: 60,
+        },
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#1e293b', borderTopColor: '#334155' },
-        tabBarActiveTintColor: '#3b82f6',
-        tabBarInactiveTintColor: '#94a3b8',
-      }}
+      })}
     >
       <Tab.Screen name="Dashboard" component={StudentDashboardScreen} options={{ tabBarLabel: 'Dashboard' }} />
       <Tab.Screen name="Attendance" component={StudentAttendanceScreen} options={{ tabBarLabel: 'Attendance' }} />

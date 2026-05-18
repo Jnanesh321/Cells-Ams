@@ -23,6 +23,7 @@ export type AuthUser = {
   semester?: number;
   gpa?: number;
   academicStatus?: string;
+  wardUsn?: string;
 };
 
 type AuthSnapshot = {
@@ -31,7 +32,21 @@ type AuthSnapshot = {
   user: AuthUser | null;
 };
 
-type SetAuthInput = AuthSnapshot;
+type SetAuthInput = AuthSnapshot | {
+  usn: string;
+  name?: string;
+  role: UserRole;
+  token: string;
+  refreshToken?: string | null;
+  email?: string;
+  phone?: string;
+  department?: string;
+  designation?: string;
+  wardUsn?: string;
+  section?: string | null;
+  semester?: number;
+  year?: number;
+};
 
 type AuthStoreState = AuthSnapshot & {
   isAuthenticated: boolean;
@@ -64,49 +79,63 @@ async function secureStoreGet(key: string): Promise<string | null> {
 }
 
 async function secureStoreSet(key: string, value: string): Promise<void> {
+  console.log('[SS] set start:', key);
   try {
     await SecureStore.setItemAsync(key, value);
-  } catch {
+    console.log('[SS] set OK via SecureStore:', key);
+  } catch (ssErr) {
+    console.log('[SS] SecureStore failed, fallback to AsyncStorage:', ssErr?.message);
     try {
       await AsyncStorage.setItem(FALLBACK_PREFIX + key, value);
-    } catch {
+      console.log('[SS] set OK via AsyncStorage fallback:', key);
+    } catch (asErr) {
+      console.log('[SS] AsyncStorage fallback ALSO failed:', asErr?.message);
     }
   }
 }
 
 async function secureStoreDelete(key: string): Promise<void> {
+  console.log('[SS] delete start:', key);
   try {
     await SecureStore.deleteItemAsync(key);
-  } catch {
+    console.log('[SS] delete OK via SecureStore:', key);
+  } catch (ssErr) {
+    console.log('[SS] SecureStore delete failed, fallback to AsyncStorage:', ssErr?.message);
     try {
       await AsyncStorage.removeItem(FALLBACK_PREFIX + key);
-    } catch {
+      console.log('[SS] delete OK via AsyncStorage:', key);
+    } catch (asErr) {
+      console.log('[SS] AsyncStorage delete ALSO failed:', asErr?.message);
     }
-  }
-  try {
-    await AsyncStorage.removeItem(FALLBACK_PREFIX + key);
-  } catch {
   }
 }
 
 async function persistAuthSnapshot(snapshot: AuthSnapshot) {
+  console.log('[PERSIST] starting with token:', !!snapshot.token, 'refreshToken:', !!snapshot.refreshToken, 'user:', !!snapshot.user);
   if (snapshot.token) {
+    console.log('[PERSIST] storing token');
     await secureStoreSet(TOKEN_KEY, snapshot.token);
+    console.log('[PERSIST] token stored OK');
   } else {
     await secureStoreDelete(TOKEN_KEY);
   }
 
   if (snapshot.refreshToken) {
+    console.log('[PERSIST] storing refreshToken');
     await secureStoreSet(REFRESH_TOKEN_KEY, snapshot.refreshToken);
+    console.log('[PERSIST] refreshToken stored OK');
   } else {
     await secureStoreDelete(REFRESH_TOKEN_KEY);
   }
 
   if (snapshot.user) {
+    console.log('[PERSIST] storing user');
     await secureStoreSet(USER_KEY, JSON.stringify(snapshot.user));
+    console.log('[PERSIST] user stored OK');
   } else {
     await secureStoreDelete(USER_KEY);
   }
+  console.log('[PERSIST] all done');
 }
 
 async function readAuthSnapshot(): Promise<AuthSnapshot> {
@@ -142,21 +171,23 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
   ...emptySnapshot,
   isAuthenticated: false,
 
-  setAuth: async ({ token, refreshToken, user }) => {
-    const snapshot = { token, refreshToken, user };
-    await persistAuthSnapshot(snapshot);
-    set({
-      ...snapshot,
-      isAuthenticated: !!token && !!user,
-    });
+  setAuth: (userData: any) => {
+    console.log('[STORE] setAuth called, role:', userData.role);
+    set({ user: userData, isAuthenticated: true });
+    console.log('[STORE] zustand set() done');
+    persistAuthSnapshot({
+      token: userData.token ?? null,
+      refreshToken: userData.refreshToken ?? null,
+      user: userData,
+    }).catch(console.log);
   },
 
   clearAuth: async () => {
-    await persistAuthSnapshot(emptySnapshot);
     set({
       ...emptySnapshot,
       isAuthenticated: false,
     });
+    persistAuthSnapshot(emptySnapshot).catch(() => {});
   },
 
   rehydrate: async () => {
@@ -174,11 +205,11 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
       refreshToken: current.refreshToken,
       user: current.user,
     };
-    await persistAuthSnapshot(snapshot);
     set({
       ...snapshot,
       isAuthenticated: !!token && !!snapshot.user,
     });
+    persistAuthSnapshot(snapshot).catch(() => {});
   },
 
   setUser: async (user: AuthUser | null) => {
@@ -188,11 +219,11 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
       refreshToken: current.refreshToken,
       user,
     };
-    await persistAuthSnapshot(snapshot);
     set({
       ...snapshot,
       isAuthenticated: !!snapshot.token && !!user,
     });
+    persistAuthSnapshot(snapshot).catch(() => {});
   },
 
   logout: async () => {

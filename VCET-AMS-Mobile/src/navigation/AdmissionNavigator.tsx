@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import AdmissionDashboardScreen from '../screens/admission/DashboardScreen';
 import BatchCreateScreen from '../screens/admission/BatchCreateScreen';
 import BulkStudentEntryScreen from '../screens/admission/BulkStudentEntryScreen';
@@ -25,12 +26,34 @@ const ProfileScreen = () => {
 const AdmissionNavigator = () => {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+            Dashboard: focused ? 'grid' : 'grid-outline',
+            Batches: focused ? 'layers' : 'layers-outline',
+            Students: focused ? 'people' : 'people-outline',
+            Mappings: focused ? 'map' : 'map-outline',
+            Profile: focused ? 'person' : 'person-outline',
+          };
+          return (
+            <Ionicons
+              name={icons[route.name] ?? 'ellipse-outline'}
+              size={size}
+              color={color}
+            />
+          );
+        },
+        tabBarActiveTintColor: '#6366F1',
+        tabBarInactiveTintColor: '#475569',
+        tabBarStyle: {
+          backgroundColor: '#0F172A',
+          borderTopColor: '#1E293B',
+          borderTopWidth: 1,
+          paddingBottom: 4,
+          height: 60,
+        },
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#1e293b', borderTopColor: '#334155' },
-        tabBarActiveTintColor: '#f97316',
-        tabBarInactiveTintColor: '#94a3b8',
-      }}
+      })}
     >
       <Tab.Screen name="Dashboard" component={AdmissionDashboardScreen} options={{ tabBarLabel: 'Dashboard' }} />
       <Tab.Screen name="Batches" component={BatchCreateScreen} options={{ tabBarLabel: 'Batches' }} />

@@ -77,7 +77,7 @@ const SubjectPickerScreen = () => {
     if (!selectedSubject) return 0;
     const detainees = getDetainedStudents(
       selectedSubject.subjectCode,
-      selectedSubject.section
+      facultyId
     );
     return detainees.filter((student) =>
       student.enrolledSubjects.some(

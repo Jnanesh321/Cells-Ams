@@ -1,11 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, RefreshControl } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../store/auth';
 import { mockStudents } from '../mock';
 import Card from '../components/Card';
 import Button from '../components/Button';
 
 const AdminDashboardScreen = () => {
+  const navigation = useNavigation<any>();
   const { user } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -133,17 +135,17 @@ const AdminDashboardScreen = () => {
           <Text className="text-white font-bold text-lg mb-3">Quick Actions</Text>
           <Button
             title="System Settings"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('Settings')}
             className="bg-purple-600 mb-2"
           />
           <Button
             title="Manage Users"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('Users')}
             className="bg-indigo-600 mb-2"
           />
           <Button
             title="View Audit Logs"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('Dashboard')}
             className="bg-slate-700 border border-slate-600"
           />
         </Card>

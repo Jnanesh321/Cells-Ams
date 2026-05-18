@@ -20,7 +20,7 @@ function buildCacheKey(config: AxiosCacheConfig): string {
 }
 
 const API = axios.create({
-  baseURL: 'http://10.164.180.116:5000',
+  baseURL: 'http://10.0.2.2:3000',
 });
 
 API.interceptors.request.use(

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useAuthStore } from '../store/auth';
+import { navigationRef } from './navigationRef';
 import LoginScreen from '../screens/LoginScreen';
 import DemoCredentialsScreen from '../screens/DemoCredentialsScreen';
 import StudentNavigator from './StudentNavigator';
@@ -14,33 +15,82 @@ import AdmissionNavigator from './AdmissionNavigator';
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
-  const { isAuthenticated, user } = useAuthStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const userRole = useAuthStore((s) => s.user?.role);
+
+  console.log('[NAV] RENDER isAuthenticated:', isAuthenticated, '| role:', userRole);
+
+  useEffect(() => {
+    console.log('[NAV] useEffect fired, isAuthenticated:', isAuthenticated, 'role:', userRole);
+
+    if (!isAuthenticated) {
+      let attempts = 0;
+      const tryReset = () => {
+        attempts++;
+        console.log(`[NAV] logout isReady attempt ${attempts}:`, navigationRef.isReady());
+        if (navigationRef.isReady()) {
+          try {
+            navigationRef.reset({ index: 0, routes: [{ name: 'Login' }] });
+            console.log('[NAV] *** logged out — reset to Login');
+          } catch (e) {
+            console.log('[NAV] logout reset error:', e);
+          }
+        } else if (attempts < 30) {
+          setTimeout(tryReset, 100);
+        } else {
+          console.log('[NAV] logout gave up after 30 attempts');
+        }
+      };
+      setTimeout(tryReset, 50);
+      return;
+    }
+
+    if (!userRole) return;
+
+    const routeMap: Record<string, string> = {
+      ADMIN: 'Admin',
+      STUDENT: 'Student',
+      FACULTY: 'Faculty',
+      HOD: 'HOD',
+      PRINCIPAL: 'Principal',
+      PARENT: 'Parent',
+      ADMISSION_CELL: 'Admission',
+    };
+
+    const targetRoute = routeMap[userRole];
+    if (!targetRoute) return;
+
+    let attempts = 0;
+    const tryReset = () => {
+      attempts++;
+      console.log(`[NAV] isReady attempt ${attempts}:`, navigationRef.isReady());
+      if (navigationRef.isReady()) {
+        try {
+          navigationRef.reset({ index: 0, routes: [{ name: targetRoute }] });
+          console.log('[NAV] *** reset fired to:', targetRoute);
+        } catch (e) {
+          console.log('[NAV] reset error:', e);
+        }
+      } else if (attempts < 30) {
+        setTimeout(tryReset, 100);
+      } else {
+        console.log('[NAV] gave up after 30 attempts');
+      }
+    };
+    setTimeout(tryReset, 50);
+  }, [isAuthenticated, userRole]);
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!isAuthenticated ? (
-          <>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="DemoCredentials" component={DemoCredentialsScreen} />
-          </>
-      ) : user?.role === 'STUDENT' ? (
-          <Stack.Screen name="Student" component={StudentNavigator} />
-      ) : user?.role === 'FACULTY' ? (
-          <Stack.Screen name="Faculty" component={FacultyNavigator} />
-      ) : user?.role === 'HOD' ? (
-        <Stack.Screen name="HOD" component={HodNavigator} />
-      ) : user?.role === 'PRINCIPAL' ? (
-        <Stack.Screen name="Principal" component={PrincipalNavigator} />
-      ) : user?.role === 'ADMIN' ? (
-        <Stack.Screen name="Admin" component={AdminNavigator} />
-      ) : user?.role === 'PARENT' ? (
-        <Stack.Screen name="Parent" component={ParentNavigator} />
-      ) : user?.role === 'ADMISSION_CELL' ? (
-        <Stack.Screen name="Admission" component={AdmissionNavigator} />
-        ) : (
-          // Fallback to login if role is not defined
-          <Stack.Screen name="Login" component={LoginScreen} />
-        )}
+    <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="DemoCredentials" component={DemoCredentialsScreen} />
+      <Stack.Screen name="Student" component={StudentNavigator} />
+      <Stack.Screen name="Faculty" component={FacultyNavigator} />
+      <Stack.Screen name="HOD" component={HodNavigator} />
+      <Stack.Screen name="Principal" component={PrincipalNavigator} />
+      <Stack.Screen name="Admin" component={AdminNavigator} />
+      <Stack.Screen name="Parent" component={ParentNavigator} />
+      <Stack.Screen name="Admission" component={AdmissionNavigator} />
     </Stack.Navigator>
   );
 };

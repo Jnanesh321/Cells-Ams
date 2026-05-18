@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, Text, View, RefreshControl } from 'react-native';
+import API from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import Card from '../../components/Card';
 import Loader from '../../components/Loader';
@@ -9,8 +10,17 @@ type Notice = {
   title: string;
   content: string;
   targetRole: string | null;
+  isActive?: boolean;
   createdAt: string;
 };
+
+function coerceList<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value as T[];
+  if (value && typeof value === 'object' && 'data' in value && Array.isArray((value as any).data)) {
+    return (value as any).data as T[];
+  }
+  return [];
+}
 
 export default function StudentNoticesScreen() {
   const { user } = useAuthStore();
@@ -20,12 +30,17 @@ export default function StudentNoticesScreen() {
 
   const fetchNotices = useCallback(async () => {
     try {
-      // Use mock backend adapter
-      const { getNotices } = await import('../../mock/backend');
-      const res = await getNotices(user?.role ?? 'STUDENT');
-      setNotices(res.data);
+      const res = await API.get('/notices');
+      setNotices(coerceList<Notice>(res.data));
     } catch {
-      setNotices([]);
+      // Fallback to mock backend adapter
+      try {
+        const { getNotices } = await import('../../mock/backend');
+        const res = await getNotices(user?.role ?? 'STUDENT');
+        setNotices(res.data);
+      } catch {
+        setNotices([]);
+      }
     }
   }, [user?.role]);
 

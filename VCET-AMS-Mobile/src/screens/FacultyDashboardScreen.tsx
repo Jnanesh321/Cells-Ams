@@ -13,7 +13,7 @@ const FacultyDashboardScreen = () => {
   const navigation = useNavigation<any>();
   const [refreshing, setRefreshing] = useState(false);
 
-  const facultyId = user?.id || '';
+  const facultyId = user?.usn || 'FAC_CSE_001';
   const facultySubjects = getFacultySubjects(facultyId);
   const department = user?.department || 'CSE';
 

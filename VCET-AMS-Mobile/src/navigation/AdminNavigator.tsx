@@ -1,11 +1,23 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
 import { Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import AdminDashboardScreen from '../screens/AdminDashboardScreen';
 import AdminUsersScreen from '../screens/admin/UsersScreen';
+import BulkStudentCreateScreen from '../screens/admin/BulkStudentCreateScreen';
 import AdminSettingsScreen from '../screens/admin/SettingsScreen';
 import { useAuthStore } from '../store/auth';
 import Button from '../components/Button';
+
+const UsersStack = createStackNavigator();
+
+const UsersStackNavigator = () => (
+  <UsersStack.Navigator screenOptions={{ headerShown: false }}>
+    <UsersStack.Screen name="UsersList" component={AdminUsersScreen} />
+    <UsersStack.Screen name="BulkStudentCreate" component={BulkStudentCreateScreen} />
+  </UsersStack.Navigator>
+);
 
 const Tab = createBottomTabNavigator();
 
@@ -24,15 +36,36 @@ const ProfileScreen = () => {
 const AdminNavigator = () => {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+            Dashboard: focused ? 'grid' : 'grid-outline',
+            Users: focused ? 'person-add' : 'person-add-outline',
+            Settings: focused ? 'settings' : 'settings-outline',
+            Profile: focused ? 'person' : 'person-outline',
+          };
+          return (
+            <Ionicons
+              name={icons[route.name] ?? 'ellipse-outline'}
+              size={size}
+              color={color}
+            />
+          );
+        },
+        tabBarActiveTintColor: '#6366F1',
+        tabBarInactiveTintColor: '#475569',
+        tabBarStyle: {
+          backgroundColor: '#0F172A',
+          borderTopColor: '#1E293B',
+          borderTopWidth: 1,
+          paddingBottom: 4,
+          height: 60,
+        },
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#1e293b', borderTopColor: '#334155' },
-        tabBarActiveTintColor: '#ef4444',
-        tabBarInactiveTintColor: '#94a3b8',
-      }}
+      })}
     >
       <Tab.Screen name="Dashboard" component={AdminDashboardScreen} options={{ tabBarLabel: 'Dashboard' }} />
-      <Tab.Screen name="Users" component={AdminUsersScreen} options={{ tabBarLabel: 'Users' }} />
+      <Tab.Screen name="Users" component={UsersStackNavigator} options={{ tabBarLabel: 'Users' }} />
       <Tab.Screen name="Settings" component={AdminSettingsScreen} options={{ tabBarLabel: 'Settings' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Profile' }} />
     </Tab.Navigator>

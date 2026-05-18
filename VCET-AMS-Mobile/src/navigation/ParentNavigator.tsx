@@ -1,9 +1,11 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import ParentDashboardScreen from '../screens/parent/DashboardScreen';
 import ParentAttendanceScreen from '../screens/parent/AttendanceScreen';
 import ParentMarksScreen from '../screens/parent/MarksScreen';
+import StudentNoticesScreen from '../screens/student/NoticesScreen';
 import { useAuthStore } from '../store/auth';
 import Button from '../components/Button';
 
@@ -24,16 +26,39 @@ const ProfileScreen = () => {
 const ParentNavigator = () => {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+            Dashboard: focused ? 'grid' : 'grid-outline',
+            Attendance: focused ? 'calendar' : 'calendar-outline',
+            Marks: focused ? 'bar-chart' : 'bar-chart-outline',
+            Notices: focused ? 'notifications' : 'notifications-outline',
+            Profile: focused ? 'person' : 'person-outline',
+          };
+          return (
+            <Ionicons
+              name={icons[route.name] ?? 'ellipse-outline'}
+              size={size}
+              color={color}
+            />
+          );
+        },
+        tabBarActiveTintColor: '#6366F1',
+        tabBarInactiveTintColor: '#475569',
+        tabBarStyle: {
+          backgroundColor: '#0F172A',
+          borderTopColor: '#1E293B',
+          borderTopWidth: 1,
+          paddingBottom: 4,
+          height: 60,
+        },
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#1e293b', borderTopColor: '#334155' },
-        tabBarActiveTintColor: '#06b6d4',
-        tabBarInactiveTintColor: '#94a3b8',
-      }}
+      })}
     >
       <Tab.Screen name="Dashboard" component={ParentDashboardScreen} options={{ tabBarLabel: 'Dashboard' }} />
       <Tab.Screen name="Attendance" component={ParentAttendanceScreen} options={{ tabBarLabel: 'Attendance' }} />
       <Tab.Screen name="Marks" component={ParentMarksScreen} options={{ tabBarLabel: 'Marks' }} />
+      <Tab.Screen name="Notices" component={StudentNoticesScreen} options={{ tabBarLabel: 'Notices' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Profile' }} />
     </Tab.Navigator>
   );

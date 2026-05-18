@@ -75,6 +75,33 @@ const DashboardScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const MOCK_ATTENDANCE: AttendanceSummaryItem[] = [
+    { subjectCode: 'CS501', subjectName: 'Advanced Data Structures', present: 28, total: 30, percentage: 93.3 },
+    { subjectCode: 'CS502', subjectName: 'Database Management Systems', present: 26, total: 30, percentage: 86.7 },
+    { subjectCode: 'CS503', subjectName: 'Software Engineering', present: 25, total: 28, percentage: 89.3 },
+    { subjectCode: 'CS504', subjectName: 'Computer Networks', present: 24, total: 30, percentage: 80.0 },
+    { subjectCode: 'CS505', subjectName: 'Machine Learning', present: 22, total: 24, percentage: 91.7 },
+  ];
+
+  const MOCK_MARKS: MarksItem[] = [
+    { subjectCode: 'CS501', subjectName: 'Advanced Data Structures', cie1: 22, cie2: 25, cie3: null },
+    { subjectCode: 'CS502', subjectName: 'Database Management Systems', cie1: 18, cie2: 20, cie3: null },
+    { subjectCode: 'CS503', subjectName: 'Software Engineering', cie1: 15, cie2: 19, cie3: null },
+    { subjectCode: 'CS504', subjectName: 'Computer Networks', cie1: 20, cie2: 22, cie3: null },
+    { subjectCode: 'CS505', subjectName: 'Machine Learning', cie1: 24, cie2: 26, cie3: null },
+  ];
+
+  const MOCK_NOTICES: NoticeItem[] = [
+    { id: '1', title: 'IA2 Examination Schedule', content: 'IA2 will be conducted from Dec 2-7, 2024.', targetRole: 'STUDENT', createdAt: '2024-11-25' },
+    { id: '2', title: 'Hackathon Registration Open', content: 'Register for the annual hackathon by Nov 30.', targetRole: 'STUDENT', createdAt: '2024-11-20' },
+  ];
+
+  const MOCK_CALENDAR: CalendarItem[] = [
+    { id: '1', title: 'IA2 Examinations', startDate: '2024-12-02', type: 'exam' },
+    { id: '2', title: 'Technical Symposium', startDate: '2024-12-15', type: 'event' },
+    { id: '3', title: 'Semester Ends', startDate: '2024-12-20', type: 'academic' },
+  ];
+
   const fetchDashboardData = useCallback(async () => {
     if (!user?.usn) return;
 
@@ -85,29 +112,15 @@ const DashboardScreen = () => {
       API.get('/calendar'),
     ]);
 
-    if (attendanceResult.status === 'fulfilled') {
-      setAttendance(coerceList<AttendanceSummaryItem>(attendanceResult.value.data));
-    } else {
-      setAttendance([]);
-    }
+    const realAttendance = attendanceResult.status === 'fulfilled' ? coerceList<AttendanceSummaryItem>(attendanceResult.value.data) : [];
+    const realMarks = marksResult.status === 'fulfilled' ? coerceList<MarksItem>(marksResult.value.data) : [];
+    const realNotices = noticesResult.status === 'fulfilled' ? coerceList<NoticeItem>(noticesResult.value.data) : [];
+    const realCalendar = calendarResult.status === 'fulfilled' ? coerceList<CalendarItem>(calendarResult.value.data) : [];
 
-    if (marksResult.status === 'fulfilled') {
-      setMarks(coerceList<MarksItem>(marksResult.value.data));
-    } else {
-      setMarks([]);
-    }
-
-    if (noticesResult.status === 'fulfilled') {
-      setNotices(coerceList<NoticeItem>(noticesResult.value.data));
-    } else {
-      setNotices([]);
-    }
-
-    if (calendarResult.status === 'fulfilled') {
-      setCalendarEvents(coerceList<CalendarItem>(calendarResult.value.data));
-    } else {
-      setCalendarEvents([]);
-    }
+    setAttendance(realAttendance.length > 0 ? realAttendance : MOCK_ATTENDANCE);
+    setMarks(realMarks.length > 0 ? realMarks : MOCK_MARKS);
+    setNotices(realNotices.length > 0 ? realNotices : MOCK_NOTICES);
+    setCalendarEvents(realCalendar.length > 0 ? realCalendar : MOCK_CALENDAR);
   }, [user?.usn]);
 
   useEffect(() => {

@@ -9,8 +9,9 @@ export default function ParentAttendanceScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const child = useMemo(() => {
-    if (!user?.usn) return null;
-    return mockStudents.find((s) => s.usn === user.usn) ?? null;
+    const childUsn = user?.wardUsn ?? user?.usn;
+    if (!childUsn) return null;
+    return mockStudents.find((s) => s.usn === childUsn) ?? null;
   }, [user]);
 
   const records = useMemo(() => {

@@ -150,9 +150,9 @@ export async function getFacultySubjectsList(facultyId: string) {
   return wrap(getFacultySubjects(facultyId));
 }
 
-export async function getAttendanceSessionData(subjectId: number, section: string, iaNumber?: number) {
+export async function getAttendanceSessionData(subjectId: string, section: string, iaNumber?: number) {
   await delay(150);
-  const usns = getSubjectStudents(`SUBJ${subjectId}`, section);
+  const usns = getSubjectStudents(subjectId, section);
   const students = (usns?.length ? usns : mockStudents.filter((s) => s.section === section).slice(0, 10)).map((u: any) => ({
     studentProfileId: parseInt(String(u.id ?? u.usn?.replace(/\D/g, '')?.slice(0, 5) ?? '0'), 10),
     usn: u.usn ?? u,
@@ -163,7 +163,7 @@ export async function getAttendanceSessionData(subjectId: number, section: strin
   return wrap(students);
 }
 
-export async function saveIAMarks(subjectId: number, iaNumber: number, entries: any[], maxMarks = 30) {
+export async function saveIAMarks(subjectId: string, iaNumber: number, entries: any[], maxMarks = 30) {
   await delay(300);
   return wrap({ updated: entries.length });
 }

@@ -27,6 +27,9 @@
         }
       ]
     ],
+    "updates": {
+      "enabled": false
+    },
     "extra": {
       "supportsTablet": false
     }

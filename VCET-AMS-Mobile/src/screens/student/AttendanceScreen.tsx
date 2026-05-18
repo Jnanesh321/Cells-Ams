@@ -1,9 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, Text, View, RefreshControl } from 'react-native';
+import API from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { mockAttendance } from '../../mock';
 import Card from '../../components/Card';
 import Loader from '../../components/Loader';
+
+function coerceList<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value as T[];
+  if (value && typeof value === 'object' && 'data' in value && Array.isArray((value as any).data)) {
+    return (value as any).data as T[];
+  }
+  return [];
+}
 
 export default function StudentAttendanceScreen() {
   const { user } = useAuthStore();
@@ -11,23 +20,26 @@ export default function StudentAttendanceScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchData = useCallback(() => {
+  const fetchData = useCallback(async () => {
     const usn = user?.usn;
     if (!usn) return;
-    const data = (mockAttendance as any)[usn];
-    setRecords(data ?? []);
+    try {
+      const res = await API.get(`/attendance/student/${usn}/summary`);
+      setRecords(coerceList<any>(res.data));
+    } catch {
+      const data = (mockAttendance as any)[usn];
+      setRecords(data ? Object.values(data) : []);
+    }
   }, [user?.usn]);
 
   useEffect(() => {
     setLoading(true);
-    fetchData();
-    setLoading(false);
+    void fetchData().finally(() => setLoading(false));
   }, [fetchData]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchData();
-    setTimeout(() => setRefreshing(false), 500);
+    void fetchData().finally(() => setRefreshing(false));
   }, [fetchData]);
 
   const overall = records.length > 0
@@ -54,7 +66,7 @@ export default function StudentAttendanceScreen() {
           <Card className="bg-slate-900 border-slate-800 mb-2">
             <View className="flex-row justify-between items-center">
               <View className="flex-1">
-                <Text className="text-white font-medium text-sm">{item.subject}</Text>
+                <Text className="text-white font-medium text-sm">{item.name ?? item.subject}</Text>
                 <Text className="text-slate-400 text-xs mt-0.5">{item.present}/{item.total} days</Text>
               </View>
               <Text className={`text-lg font-bold ${item.percentage < 75 ? 'text-red-400' : item.percentage < 85 ? 'text-yellow-400' : 'text-green-400'}`}>

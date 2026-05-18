@@ -17,9 +17,9 @@ const DEMO_ACCOUNTS = [
   {
     role: '👨‍🏫 Faculty',
     accounts: [
-      { id: 'FAC_CSE01', name: 'Dr. Rajeev Sharma', password: 'faculty@123', detail: 'CSE • Assistant Professor' },
-      { id: 'FAC_CSE02', name: 'Prof. Deepa Shenoy', password: 'faculty@123', detail: 'CSE • Associate Professor' },
-      { id: 'FAC_ECE01', name: 'Dr. Niranjan Das', password: 'faculty@123', detail: 'ECE • Professor' },
+      { id: 'FAC_CSE_001', name: 'Mrs. Akshaya D. Shetty', password: 'faculty@123', detail: 'CSE • Assistant Professor' },
+      { id: 'FAC_CSE_002', name: 'Mr. Ajay Shastry C G', password: 'faculty@123', detail: 'CSE • Assistant Professor' },
+      { id: 'FAC_ECE_001', name: 'Mr. Naveenakrishna P V', password: 'faculty@123', detail: 'ECE • Assistant Professor' },
     ],
     color: 'bg-green-600',
   },
@@ -48,6 +48,7 @@ const DEMO_ACCOUNTS = [
     role: '👨‍👩‍👦 Parent',
     accounts: [
       { id: 'PARENT01', name: 'Mr. Arjun Patel', password: 'parent@123', detail: 'Ward: 4VP21CS001' },
+      { id: 'Student USN', name: 'Login with USN in Staff tab', password: 'parent@123', detail: 'e.g., 4VP21CS001 (parent@123)' },
     ],
     color: 'bg-cyan-600',
   },

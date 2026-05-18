@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import FacultyDashboardScreen from '../screens/FacultyDashboardScreen';
 import SubjectPickerScreen from '../screens/SubjectPickerScreen';
 import AttendanceSessionScreen from '../screens/AttendanceSessionScreen';
@@ -57,13 +58,33 @@ const MarksStackNavigator = () => (
 const FacultyNavigator = () => {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+            DashboardTab: focused ? 'grid' : 'grid-outline',
+            Subjects: focused ? 'book' : 'book-outline',
+            Marks: focused ? 'bar-chart' : 'bar-chart-outline',
+            Profile: focused ? 'person' : 'person-outline',
+          };
+          return (
+            <Ionicons
+              name={icons[route.name] ?? 'ellipse-outline'}
+              size={size}
+              color={color}
+            />
+          );
+        },
+        tabBarActiveTintColor: '#6366F1',
+        tabBarInactiveTintColor: '#475569',
+        tabBarStyle: {
+          backgroundColor: '#0F172A',
+          borderTopColor: '#1E293B',
+          borderTopWidth: 1,
+          paddingBottom: 4,
+          height: 60,
+        },
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#1e293b', borderTopColor: '#334155', paddingVertical: 8 },
-        tabBarActiveTintColor: '#3b82f6',
-        tabBarInactiveTintColor: '#94a3b8',
-        tabBarLabelStyle: { fontSize: 11, marginTop: 2 },
-      }}
+      })}
     >
       <Tab.Screen
         name="DashboardTab"

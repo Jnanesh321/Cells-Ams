@@ -27,13 +27,13 @@ export default function MarksSubjectPickerScreen() {
       <FlatList
         className="px-4"
         data={subjects}
-        keyExtractor={(item: any) => `${item.code}-${item.section ?? 'A'}`}
+        keyExtractor={(item: any) => `${item.subjectCode}-${item.section ?? 'A'}`}
         renderItem={({ item }: any) => (
           <TouchableOpacity
             onPress={() =>
               navigation.navigate('IAMarksEntry', {
-                subjectId: parseInt(item.code.replace(/\D/g, '').slice(0, 5) || '1', 10),
-                subjectName: item.name,
+                subjectId: item.subjectCode,
+                subjectName: item.subject,
                 section: item.section ?? 'A',
               })
             }
@@ -41,9 +41,9 @@ export default function MarksSubjectPickerScreen() {
             <Card className="bg-slate-900 border-slate-800 mb-2">
               <View className="flex-row justify-between items-center">
                 <View className="flex-1">
-                  <Text className="text-white font-semibold text-sm">{item.name}</Text>
+                  <Text className="text-white font-semibold text-sm">{item.subject}</Text>
                   <Text className="text-slate-400 text-xs mt-0.5">
-                    {item.code} • {item.section ? `Section ${item.section}` : ''} • Sem {item.semester}
+                    {item.subjectCode} • {item.section ? `Section ${item.section}` : ''} • Sem {item.semester}
                   </Text>
                 </View>
                 <Text className="text-blue-400 text-lg ml-2">{'>'}</Text>

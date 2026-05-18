@@ -14,6 +14,7 @@ export interface User {
   section?: string;
   gpa?: number;
   academicStatus?: string;
+  wardUsn?: string;
 }
 
 export interface AuthState {
@@ -185,6 +186,18 @@ export type StudentAcademicStatus = {
   status: DetentionStatus;
   reasons: string[];
 };
+
+export type SubjectType = 'CORE' | 'ELECTIVE' | 'LAB' | 'AUDIT';
+
+export interface VTUSubject {
+  code: string;
+  name: string;
+  credits: number;
+  type: SubjectType;
+  department: string;
+  semester: number;
+  scheme: '2022' | '2021';
+}
 
 export type BirthdayRecord = {
   usn: string;

@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import HodDashboardScreen from '../screens/HodDashboardScreen';
 import HodAnalyticsScreen from '../screens/hod/AnalyticsScreen';
 import HodFacultyScreen from '../screens/hod/FacultyScreen';
@@ -25,12 +26,34 @@ const ProfileScreen = () => {
 const HodNavigator = () => {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+            Dashboard: focused ? 'grid' : 'grid-outline',
+            Analytics: focused ? 'analytics' : 'analytics-outline',
+            Faculty: focused ? 'people' : 'people-outline',
+            Reports: focused ? 'document-text' : 'document-text-outline',
+            Profile: focused ? 'person' : 'person-outline',
+          };
+          return (
+            <Ionicons
+              name={icons[route.name] ?? 'ellipse-outline'}
+              size={size}
+              color={color}
+            />
+          );
+        },
+        tabBarActiveTintColor: '#6366F1',
+        tabBarInactiveTintColor: '#475569',
+        tabBarStyle: {
+          backgroundColor: '#0F172A',
+          borderTopColor: '#1E293B',
+          borderTopWidth: 1,
+          paddingBottom: 4,
+          height: 60,
+        },
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#1e293b', borderTopColor: '#334155' },
-        tabBarActiveTintColor: '#a855f7',
-        tabBarInactiveTintColor: '#94a3b8',
-      }}
+      })}
     >
       <Tab.Screen name="Dashboard" component={HodDashboardScreen} options={{ tabBarLabel: 'Dashboard' }} />
       <Tab.Screen name="Analytics" component={HodAnalyticsScreen} options={{ tabBarLabel: 'Analytics' }} />

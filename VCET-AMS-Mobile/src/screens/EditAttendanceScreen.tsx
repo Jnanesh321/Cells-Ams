@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'reac
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAttendanceStore } from '../store/attendance';
 import { useAuthStore } from '../store/auth';
+import { useAppTheme } from '../hooks/useAppTheme';
 import { AttendanceStatus, StudentAttendanceRecord } from '../types';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -12,15 +13,16 @@ const EditAttendanceScreen = () => {
   const route = useRoute<any>();
   const { currentSession, updateStudentStatus, addEdit } = useAttendanceStore();
   const { user } = useAuthStore();
+  const { colors } = useAppTheme();
 
   const student: StudentAttendanceRecord | undefined = route.params?.student;
   const sessionId: string | undefined = route.params?.sessionId;
 
   if (!student) {
     return (
-      <View className="flex-1 bg-slate-950 justify-center items-center p-4">
-        <Text className="text-slate-400 text-lg">Student data not available</Text>
-        <Text className="text-slate-600 text-sm mt-2">Unable to load attendance record</Text>
+      <View className="flex-1 justify-center items-center p-4" style={{ backgroundColor: colors.bg }}>
+        <Text className="text-lg" style={{ color: colors.textMuted }}>Student data not available</Text>
+        <Text className="text-sm mt-2" style={{ color: colors.textTertiary }}>Unable to load attendance record</Text>
       </View>
     );
   }
@@ -87,41 +89,41 @@ const EditAttendanceScreen = () => {
   };
 
   return (
-    <View className="flex-1 bg-slate-900">
+    <View className="flex-1" style={{ backgroundColor: colors.bg }}>
       {/* Header */}
-      <View className="bg-slate-800 border-b border-slate-700 px-4 pt-4 pb-4">
+      <View className="px-4 pt-4 pb-4 border-b" style={{ backgroundColor: colors.bgCard, borderBottomColor: colors.border }}>
         <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3">
           <Text className="text-blue-400 font-semibold">← Back</Text>
         </TouchableOpacity>
         <View>
-          <Text className="text-white text-lg font-bold">{student.name}</Text>
-          <Text className="text-slate-400 text-sm">{student.usn}</Text>
+          <Text className="text-lg font-bold" style={{ color: colors.text }}>{student.name}</Text>
+          <Text className="text-sm" style={{ color: colors.textMuted }}>{student.usn}</Text>
         </View>
       </View>
 
       <ScrollView className="flex-1 p-4">
         {/* Student Info Card */}
-        <Card className="bg-slate-800 border border-slate-700 mb-4">
-          <Text className="text-slate-400 text-sm mb-2">Student Information</Text>
-          <View className="bg-slate-700 rounded-lg p-3">
+        <Card className="mb-4" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+          <Text className="text-sm mb-2" style={{ color: colors.textMuted }}>Student Information</Text>
+          <View className="rounded-lg p-3" style={{ backgroundColor: colors.bgTertiary }}>
             <View className="flex-row justify-between mb-2">
-              <Text className="text-slate-400 text-sm">USN</Text>
-              <Text className="text-white font-semibold">{student.usn}</Text>
+              <Text className="text-sm" style={{ color: colors.textMuted }}>USN</Text>
+              <Text className="font-semibold" style={{ color: colors.text }}>{student.usn}</Text>
             </View>
             <View className="flex-row justify-between mb-2">
-              <Text className="text-slate-400 text-sm">Name</Text>
-              <Text className="text-white font-semibold">{student.name}</Text>
+              <Text className="text-sm" style={{ color: colors.textMuted }}>Name</Text>
+              <Text className="font-semibold" style={{ color: colors.text }}>{student.name}</Text>
             </View>
             <View className="flex-row justify-between">
-              <Text className="text-slate-400 text-sm">Section</Text>
-              <Text className="text-white font-semibold">{student.section}</Text>
+              <Text className="text-sm" style={{ color: colors.textMuted }}>Section</Text>
+              <Text className="font-semibold" style={{ color: colors.text }}>{student.section}</Text>
             </View>
           </View>
         </Card>
 
         {/* Current Status */}
-        <Card className="bg-slate-800 border border-slate-700 mb-4">
-          <Text className="text-slate-400 text-sm mb-3">Current Status</Text>
+        <Card className="mb-4" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+          <Text className="text-sm mb-3" style={{ color: colors.textMuted }}>Current Status</Text>
           <View
             className="rounded-lg px-4 py-3 border-2 items-center justify-center"
             style={{
@@ -129,7 +131,7 @@ const EditAttendanceScreen = () => {
               backgroundColor: `${getStatusColor(student.status)}20`,
             }}
           >
-            <Text className="text-slate-400 text-xs mb-1">Currently Marked as</Text>
+            <Text className="text-xs mb-1" style={{ color: colors.textMuted }}>Currently Marked as</Text>
             <Text
               className="text-lg font-bold"
               style={{ color: getStatusColor(student.status) }}
@@ -140,8 +142,8 @@ const EditAttendanceScreen = () => {
         </Card>
 
         {/* Status Selection */}
-        <Card className="bg-slate-800 border border-slate-700 mb-4">
-          <Text className="text-white font-bold text-base mb-3">Change Status To</Text>
+        <Card className="mb-4" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+          <Text className="font-bold text-base mb-3" style={{ color: colors.text }}>Change Status To</Text>
           <View className="gap-2">
             {statusOptions.map((option) => (
               <TouchableOpacity
@@ -150,11 +152,7 @@ const EditAttendanceScreen = () => {
                 activeOpacity={0.7}
               >
                 <View
-                  className={`rounded-lg px-4 py-3 border-2 flex-row items-center justify-between ${
-                    selectedStatus === option.value
-                      ? 'bg-opacity-20 border-opacity-100'
-                      : 'bg-opacity-0 border-opacity-30'
-                  }`}
+                  className="rounded-lg px-4 py-3 border-2 flex-row items-center justify-between"
                   style={{
                     borderColor: option.color,
                     backgroundColor: selectedStatus === option.value ? `${option.color}20` : 'transparent',
@@ -177,7 +175,7 @@ const EditAttendanceScreen = () => {
 
         {/* Edit Reason - Show only if status changed */}
         {selectedStatus !== student.status && (
-          <Card className="bg-red-900/20 border border-red-700/30 mb-4">
+          <Card className="mb-4" style={{ backgroundColor: 'rgba(239,68,68,0.2)', borderColor: 'rgba(239,68,68,0.3)', borderWidth: 1 }}>
             <View className="flex-row items-start gap-2 mb-3">
               <Text className="text-red-400 text-lg">⚠️</Text>
               <View className="flex-1">
@@ -190,15 +188,16 @@ const EditAttendanceScreen = () => {
 
             {/* Reason Input */}
             <View className="mb-2">
-              <Text className="text-white font-bold text-sm mb-2">Reason for Change *</Text>
+              <Text className="font-bold text-sm mb-2" style={{ color: colors.text }}>Reason for Change *</Text>
               <TextInput
                 placeholder="e.g., Student produced medical certificate, etc."
-                placeholderTextColor="#94a3b8"
+                placeholderTextColor={colors.placeholder}
                 value={editReason}
                 onChangeText={setEditReason}
                 multiline
                 numberOfLines={4}
-                className="bg-slate-800 text-white border border-slate-600 rounded-lg px-3 py-2"
+                className="rounded-lg px-3 py-2"
+                style={{ backgroundColor: colors.bgCard, color: colors.text, borderColor: colors.border, borderWidth: 1 }}
               />
               {errors.reason && (
                 <Text className="text-red-400 text-xs mt-1">{errors.reason}</Text>
@@ -206,8 +205,8 @@ const EditAttendanceScreen = () => {
             </View>
 
             {/* Edit Info */}
-            <View className="bg-slate-800/50 rounded-lg p-2 mt-3">
-              <Text className="text-slate-300 text-xs">
+            <View className="rounded-lg p-2 mt-3" style={{ backgroundColor: `${colors.bgCard}80` }}>
+              <Text className="text-xs" style={{ color: colors.textSecondary }}>
                 ℹ️ All edits are logged with timestamp and faculty ID for accountability.
               </Text>
             </View>
@@ -216,23 +215,23 @@ const EditAttendanceScreen = () => {
 
         {/* No Change Notice */}
         {selectedStatus === student.status && (
-          <Card className="bg-slate-800 border border-slate-700 mb-4">
-            <Text className="text-slate-400 text-sm">No status change selected</Text>
+          <Card className="mb-4" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+            <Text className="text-sm" style={{ color: colors.textMuted }}>No status change selected</Text>
           </Card>
         )}
       </ScrollView>
 
       {/* Action Buttons */}
-      <View className="bg-slate-800 border-t border-slate-700 p-4 flex-row gap-3">
+      <View className="p-4 flex-row gap-3 border-t" style={{ backgroundColor: colors.bgCard, borderTopColor: colors.border }}>
         <Button
           title="Cancel"
           onPress={() => navigation.goBack()}
-          className="flex-1 bg-slate-700"
+          style={{ backgroundColor: colors.bgTertiary }}
         />
         <Button
           title="Save"
           onPress={handleSave}
-          className={`flex-1 ${selectedStatus !== student.status ? 'bg-blue-600' : 'bg-slate-700 opacity-50'}`}
+          style={{ backgroundColor: selectedStatus !== student.status ? '#3b82f6' : colors.bgTertiary }}
           disabled={selectedStatus === student.status}
         />
       </View>

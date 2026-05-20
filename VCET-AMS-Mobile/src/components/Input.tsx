@@ -1,5 +1,6 @@
 import React from 'react';
 import { TextInput } from 'react-native';
+import { useAppTheme } from '../hooks/useAppTheme';
 
 interface InputProps {
   placeholder: string;
@@ -18,15 +19,22 @@ const Input: React.FC<InputProps> = ({
   className = '',
   autoCapitalize = 'none',
 }) => {
+  const { colors } = useAppTheme();
+
   return (
     <TextInput
-      className={`w-full bg-slate-700 border border-slate-600 rounded-md h-12 px-4 my-2 text-white placeholder-slate-400 ${className}`}
+      className={`w-full border rounded-md h-12 px-4 my-2 ${className}`}
+      style={{
+        backgroundColor: colors.bgInput,
+        borderColor: colors.border,
+        color: colors.text,
+      }}
       placeholder={placeholder}
+      placeholderTextColor={colors.placeholder}
       value={value}
       onChangeText={onChangeText}
       secureTextEntry={secureTextEntry}
       autoCapitalize={autoCapitalize}
-      placeholderTextColor="#94a3b8"
     />
   );
 };

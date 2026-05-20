@@ -163,7 +163,7 @@ export async function getAttendanceSessionData(subjectId: string, section: strin
   return wrap(students);
 }
 
-export async function saveIAMarks(subjectId: string, iaNumber: number, entries: any[], maxMarks = 30) {
+export async function saveIAMarks(subjectId: string, iaNumber: number, entries: any[], maxMarks = 50) {
   await delay(300);
   return wrap({ updated: entries.length });
 }

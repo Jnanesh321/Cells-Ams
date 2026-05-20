@@ -14,8 +14,8 @@
 //   Final = CIE + SEE = 100 marks
 
 export const VTU_RULES = {
-  IA_MAX: 30,
-  CIE_IA_MAX: 30,
+  IA_MAX: 50,
+  CIE_IA_MAX: 50,
   CIE_ASSIGNMENT_MAX: 10,
   CIE_TOTAL: 40,
   SEE_TOTAL: 60,
@@ -36,7 +36,7 @@ type CIEMarks = {
  * Calculate CIE from IA marks using VTU rules.
  * Best 2 of 3 IAs scaled to 30 + assignment (max 10) = CIE total (max 40)
  */
-export function calculateCIE(marks: CIEMarks): {
+export function calculateCIE(marks: CIEMarks, iaMax = VTU_RULES.CIE_IA_MAX): {
   iaBestTwo: number;
   cieFromIA: number;
   assignment: number;
@@ -50,7 +50,7 @@ export function calculateCIE(marks: CIEMarks): {
   const bestTwo = iaValues.slice(0, 2);
   const iaBestTwo = bestTwo.reduce((s, v) => s + v, 0);
   const assignment = Math.min(Math.max(marks.assignment ?? 0, 0), VTU_RULES.CIE_ASSIGNMENT_MAX);
-  const cieFromIA = Math.min(iaBestTwo, VTU_RULES.CIE_IA_MAX);
+  const cieFromIA = Math.min(iaBestTwo, iaMax);
   const cieTotal = Math.min(cieFromIA + assignment, VTU_RULES.CIE_TOTAL);
   const isEligible = cieTotal >= VTU_RULES.DETENTION_CIE_THRESHOLD;
 
@@ -153,13 +153,81 @@ export function getAttendanceWarningColor(level: 'critical' | 'warning' | 'safe'
 /**
  * Format CIE display for UI
  */
-export function formatCIEDisplay(marks: CIEMarks): string {
-  const cie = calculateCIE(marks);
+export function formatCIEDisplay(marks: CIEMarks, iaMax = VTU_RULES.CIE_IA_MAX): string {
+  const cie = calculateCIE(marks, iaMax);
   const parts = [
-    `IA: ${cie.iaBestTwo}/${VTU_RULES.CIE_IA_MAX}`,
+    `IA: ${cie.iaBestTwo}/${iaMax}`,
     `Asgn: ${cie.assignment}/${VTU_RULES.CIE_ASSIGNMENT_MAX}`,
     `CIE: ${cie.cieTotal}/${VTU_RULES.CIE_TOTAL}`,
   ];
   if (!cie.isEligible) parts.push('⚠️ Below threshold');
   return parts.join(' • ');
+}
+
+// ==================== VTU IA CALCULATION (Q1-Q4 System) ====================
+
+export interface VTUIACalculationResult {
+  sectionA: number;
+  sectionB: number;
+  total: number;
+}
+
+export interface VTUBestTwoResult {
+  bestTwoTotal: number;
+  finalCIE: number;
+}
+
+const QUESTION_MAX = 25;
+const IA_MAX = 50;
+
+export function calcVTUIATotal(
+  q1: number | null,
+  q2: number | null,
+  q3: number | null,
+  q4: number | null
+): VTUIACalculationResult {
+  const v1 = Math.min(Math.max(q1 ?? 0, 0), QUESTION_MAX);
+  const v2 = Math.min(Math.max(q2 ?? 0, 0), QUESTION_MAX);
+  const v3 = Math.min(Math.max(q3 ?? 0, 0), QUESTION_MAX);
+  const v4 = Math.min(Math.max(q4 ?? 0, 0), QUESTION_MAX);
+
+  const sectionA = Math.max(v1, v2);
+  const sectionB = Math.max(v3, v4);
+  const total = Math.min(sectionA + sectionB, IA_MAX);
+
+  return { sectionA, sectionB, total };
+}
+
+export function calcVTUBestTwo(
+  ia1: number | null,
+  ia2: number | null,
+  ia3: number | null
+): VTUBestTwoResult {
+  const totals = [ia1, ia2, ia3]
+    .filter((v): v is number => v != null && v > 0)
+    .sort((a, b) => b - a);
+
+  const bestTwoTotal = totals.length >= 2
+    ? totals[0] + totals[1]
+    : totals.length === 1
+      ? totals[0]
+      : 0;
+
+  return { bestTwoTotal, finalCIE: Math.min(bestTwoTotal, IA_MAX) };
+}
+
+export function validateVTUQuestion(value: number | null): boolean {
+  if (value == null) return true; // empty = valid
+  return value >= 0 && value <= QUESTION_MAX;
+}
+
+export function validateVTUIAEntry(q1: number | null, q2: number | null, q3: number | null, q4: number | null): string | null {
+  if (q1 == null && q2 == null && q3 == null && q4 == null) {
+    return 'At least one question must have marks';
+  }
+  if (q1 != null && !validateVTUQuestion(q1)) return 'Q1 must be 0-25';
+  if (q2 != null && !validateVTUQuestion(q2)) return 'Q2 must be 0-25';
+  if (q3 != null && !validateVTUQuestion(q3)) return 'Q3 must be 0-25';
+  if (q4 != null && !validateVTUQuestion(q4)) return 'Q4 must be 0-25';
+  return null;
 }

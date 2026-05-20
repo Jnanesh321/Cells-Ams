@@ -13,6 +13,15 @@
       },
       "softwareKeyboardLayoutMode": "pan"
     },
+    "ios": {
+      "bundleIdentifier": "com.vcet.ams",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      }
+    },
     "web": {
       "bundler": "metro"
     },
@@ -31,7 +40,8 @@
       "enabled": false
     },
     "extra": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "apiUrl": "http://10.0.2.2:3000"
     }
   }
 }

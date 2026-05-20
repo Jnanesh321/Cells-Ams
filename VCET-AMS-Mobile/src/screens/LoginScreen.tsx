@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Alert, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../store/auth';
+import { useAppTheme } from '../hooks/useAppTheme';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import { UserRole } from '../types';
@@ -100,6 +101,7 @@ const LOGIN_TABS: { key: 'student' | 'staff'; label: string; icon: string }[] = 
 
 const LoginScreen = () => {
   const navigation = useNavigation<any>();
+  const { colors } = useAppTheme();
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -122,24 +124,13 @@ const LoginScreen = () => {
 
     const trimmedId = userId.trim().toUpperCase();
 
-    if (trimmedId === 'ADMIN' && password === 'admin@123') {
-      setDebugMsg('ADMIN path — calling setAuth');
-      setAuth({
-        usn: 'ADMIN',
-        name: 'Admin User',
-        role: 'ADMIN',
-        token: 'local-admin-token',
-        refreshToken: 'local-admin-refresh',
-      });
-      setDebugMsg('setAuth done — waiting for nav');
-      setLoading(false);
-      return;
-    }
-
     setDebugMsg('trying backend...');
     try {
       const response = await api.post('/auth/login', { usn: trimmedId, password });
-      const { token, refreshToken, user } = response.data.data;
+      const data = response.data;
+      const token = data.accessToken;
+      const refreshToken = data.refreshToken ?? null;
+      const user = data.user;
       setDebugMsg(`backend ok: ${user.role}`);
       setAuth({ ...user, token, refreshToken });
     } catch (err: any) {
@@ -160,30 +151,31 @@ const LoginScreen = () => {
   return (
     <>
       {__DEV__ && (
-        <View style={{ backgroundColor: '#1a1a2e', padding: 8, marginBottom: 8, borderRadius: 6 }}>
-          <Text style={{ color: '#00ff88', fontSize: 11, fontFamily: 'monospace' }}>
+        <View style={{ backgroundColor: colors.bgSecondary, padding: 8, marginBottom: 8, borderRadius: 6 }}>
+          <Text style={{ color: colors.success, fontSize: 11, fontFamily: 'monospace' }}>
             isAuth: {String(isAuthenticated)} | role: {userRole ?? 'none'}
           </Text>
-          <Text style={{ color: '#ffaa00', fontSize: 11, fontFamily: 'monospace' }}>
+          <Text style={{ color: colors.warning, fontSize: 11, fontFamily: 'monospace' }}>
             lastLog: {debugMsg}
           </Text>
         </View>
       )}
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-slate-900"
+      className="flex-1"
+      style={{ backgroundColor: colors.bg }}
     >
       <View className="flex-1 justify-center items-center p-6">
         <View className="mb-6 items-center">
-          <Text className="text-4xl font-bold text-white mb-2">VCET AMS</Text>
-          <Text className="text-lg text-slate-400">Academic Monitoring System</Text>
+          <Text className="text-4xl font-bold mb-2" style={{ color: colors.text }}>VCET AMS</Text>
+          <Text className="text-lg" style={{ color: colors.textSecondary }}>Academic Monitoring System</Text>
         </View>
 
-        <View className="w-full bg-slate-800 rounded-xl p-6 border border-slate-700">
-          <Text className="text-2xl font-bold text-white mb-6 text-center">Login</Text>
+        <View className="w-full rounded-xl p-6" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+          <Text className="text-2xl font-bold mb-6 text-center" style={{ color: colors.text }}>Login</Text>
 
           {/* Login Mode Tabs */}
-          <View className="flex-row bg-slate-900 rounded-xl p-1 mb-6 border border-slate-700">
+          <View className="flex-row rounded-xl p-1 mb-6" style={{ backgroundColor: colors.bgSecondary, borderColor: colors.border, borderWidth: 1 }}>
             {LOGIN_TABS.map((tab) => (
               <TouchableOpacity
                 key={tab.key}
@@ -195,8 +187,9 @@ const LoginScreen = () => {
                 <Text className="text-sm">{tab.icon}</Text>
                 <Text
                   className={`text-sm font-semibold ${
-                    loginTab === tab.key ? 'text-white' : 'text-slate-400'
+                    loginTab === tab.key ? 'text-white' : ''
                   }`}
+                  style={{ color: loginTab === tab.key ? '#FFFFFF' : colors.textMuted }}
                 >
                   {tab.label}
                 </Text>
@@ -205,7 +198,7 @@ const LoginScreen = () => {
           </View>
 
           <View className="mb-4">
-            <Text className="text-slate-300 mb-2 font-medium">
+            <Text className="mb-2 font-medium" style={{ color: colors.textSecondary }}>
               {loginTab === 'student' ? 'USN' : 'User ID / USN'}
             </Text>
             <Input
@@ -213,28 +206,26 @@ const LoginScreen = () => {
               value={userId}
               onChangeText={(text) => setUserId(text.toUpperCase())}
               autoCapitalize="characters"
-              className="bg-slate-700 border-slate-600 text-white placeholder-slate-500"
             />
             {loginTab === 'staff' && (
-              <Text className="text-xs text-slate-500 mt-1">
+              <Text className="text-xs mt-1" style={{ color: colors.textMuted }}>
                 Faculty: FAC_CSE_001 | Admin: ADMIN | Principal: PRINCIPAL | HOD: HOD_CSE | Parent: PARENT01 (or student USN) | Admission: ADMISSION
               </Text>
             )}
             {loginTab === 'student' && (
-              <Text className="text-xs text-slate-500 mt-1">
+              <Text className="text-xs mt-1" style={{ color: colors.textMuted }}>
                 Enter your VTU USN (e.g., 4VP21CS001)
               </Text>
             )}
           </View>
 
           <View className="mb-6">
-            <Text className="text-slate-300 mb-2 font-medium">Password</Text>
+            <Text className="mb-2 font-medium" style={{ color: colors.textSecondary }}>Password</Text>
             <Input
               placeholder="Enter password"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              className="bg-slate-700 border-slate-600 text-white placeholder-slate-500"
             />
           </View>
 
@@ -242,31 +233,32 @@ const LoginScreen = () => {
             title={loading ? "Logging in..." : "Login"}
             onPress={handleLogin}
             disabled={loading}
-            className="bg-blue-600 active:bg-blue-700 mb-3"
+            className="mb-3"
           />
 
           <TouchableOpacity
             onPress={() => navigation.navigate('DemoCredentials')}
-            className="bg-slate-700 rounded-xl py-3 items-center mb-4 border border-slate-600"
+            className="rounded-xl py-3 items-center mb-4"
+            style={{ backgroundColor: colors.bgInput, borderColor: colors.border, borderWidth: 1 }}
           >
-            <Text className="text-slate-300 text-sm font-medium">📋 View Demo Credentials</Text>
+            <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>📋 View Demo Credentials</Text>
           </TouchableOpacity>
 
-          <View className="pt-4 border-t border-slate-700">
-            <Text className="text-slate-400 font-semibold mb-3 text-center">Demo Credentials</Text>
+          <View className="pt-4" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
+            <Text className="font-semibold mb-3 text-center" style={{ color: colors.textMuted }}>Demo Credentials</Text>
             <View className="space-y-2">
-              <Text className="text-slate-500 text-xs">👤 Student: 4VP21CS001 (vcet@123)</Text>
-              <Text className="text-slate-500 text-xs">👨‍🏫 Faculty: FAC_CSE_001 (faculty@123)</Text>
-              <Text className="text-slate-500 text-xs">👔 HOD: HOD_CSE (hod@123)</Text>
-              <Text className="text-slate-500 text-xs">🎓 Principal: PRINCIPAL (principal@123)</Text>
-              <Text className="text-slate-500 text-xs">⚙️ Admin: ADMIN (admin@123)</Text>
-              <Text className="text-slate-500 text-xs">👨‍👩‍👦 Parent: PARENT01 (parent@123) or USN (parent@123) in Staff tab</Text>
-              <Text className="text-slate-500 text-xs">📋 Admission: ADMISSION (admission@123)</Text>
+              <Text className="text-xs" style={{ color: colors.textTertiary }}>👤 Student: 4VP21CS001</Text>
+              <Text className="text-xs" style={{ color: colors.textTertiary }}>👨‍🏫 Faculty: FAC_CSE_001</Text>
+              <Text className="text-xs" style={{ color: colors.textTertiary }}>👔 HOD: HOD_CSE</Text>
+              <Text className="text-xs" style={{ color: colors.textTertiary }}>🎓 Principal: PRINCIPAL</Text>
+              <Text className="text-xs" style={{ color: colors.textTertiary }}>⚙️ Admin: ADMIN</Text>
+              <Text className="text-xs" style={{ color: colors.textTertiary }}>👨‍👩‍👦 Parent: PARENT01 or Student USN (Staff tab)</Text>
+              <Text className="text-xs" style={{ color: colors.textTertiary }}>📋 Admission: ADMISSION</Text>
             </View>
           </View>
         </View>
 
-        <Text className="text-slate-600 text-sm mt-8 text-center">
+        <Text className="text-sm mt-8 text-center" style={{ color: colors.textMuted }}>
           VCET Puttur - Academic Monitoring System
         </Text>
       </View>

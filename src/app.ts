@@ -13,6 +13,11 @@ import calendarRoutes from "./routes/calendar.routes";
 import academicDayRoutes from "./routes/academicDay.routes";
 import timetableRoutes from "./routes/timetable.routes";
 import birthdayRoutes from "./routes/birthday.routes";
+import facultyRoutes from "./routes/faculty.routes";
+import hodRoutes from "./routes/hod.routes";
+import counsellingRoutes from "./routes/counselling.routes";
+import admissionRoutes from "./routes/admission.routes";
+import emailRoutes from "./routes/email.routes";
 
 const app: Application = express();
 
@@ -55,6 +60,11 @@ app.use("/calendar", calendarRoutes);
 app.use("/academic-day", academicDayRoutes);
 app.use("/timetable", timetableRoutes);
 app.use("/birthdays", birthdayRoutes);
+app.use("/faculty", facultyRoutes);
+app.use("/hod", hodRoutes);
+app.use("/counselling", counsellingRoutes);
+app.use("/admission", admissionRoutes);
+app.use("/email", emailRoutes);
 
 /* --------------------------- 404 Handler --------------------------- */
 app.use(notFound);

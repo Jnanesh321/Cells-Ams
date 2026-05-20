@@ -1,38 +1,31 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '../hooks/useAppTheme';
 import StudentDashboardScreen from '../screens/student/DashboardScreen';
 import StudentAttendanceScreen from '../screens/student/AttendanceScreen';
 import StudentMarksScreen from '../screens/student/MarksScreen';
-import StudentNoticesScreen from '../screens/student/NoticesScreen';
-import { useAuthStore } from '../store/auth';
-import Button from '../components/Button';
+import StudentNotesScreen from '../screens/student/NotesScreen';
+import StudentTimetableScreen from '../screens/student/TimetableScreen';
+import StudentCounsellingScreen from '../screens/student/StudentCounsellingScreen';
+import StudentProfileScreen from '../screens/student/StudentProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
-const ProfileScreen = () => {
-  const { user, logout } = useAuthStore();
-  return (
-    <View className="flex-1 bg-slate-900 p-4 justify-center items-center">
-      <Text className="text-white text-2xl font-bold mb-4">{user?.name}</Text>
-      <Text className="text-slate-400 mb-1">{user?.email}</Text>
-      <Text className="text-slate-500 text-sm mb-8">{user?.usn} • {user?.department} • Sem {user?.semester}</Text>
-      <Button title="Logout" onPress={logout} className="bg-red-600 w-full" />
-    </View>
-  );
-};
-
 const StudentNavigator = () => {
+  const { colors } = useAppTheme();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
-            Dashboard: focused ? 'grid' : 'grid-outline',
+            Dashboard: focused ? 'home' : 'home-outline',
             Attendance: focused ? 'calendar' : 'calendar-outline',
+            Notes: focused ? 'document-text' : 'document-text-outline',
+            Timetable: focused ? 'time' : 'time-outline',
             Marks: focused ? 'bar-chart' : 'bar-chart-outline',
-            Notices: focused ? 'notifications' : 'notifications-outline',
+            Counselling: focused ? 'chatbubbles' : 'chatbubbles-outline',
             Profile: focused ? 'person' : 'person-outline',
           };
           return (
@@ -43,11 +36,11 @@ const StudentNavigator = () => {
             />
           );
         },
-        tabBarActiveTintColor: '#6366F1',
-        tabBarInactiveTintColor: '#475569',
+        tabBarActiveTintColor: colors.accentStudent,
+        tabBarInactiveTintColor: colors.tabBarInactive,
         tabBarStyle: {
-          backgroundColor: '#0F172A',
-          borderTopColor: '#1E293B',
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
           paddingBottom: 4,
           height: 60,
@@ -58,8 +51,10 @@ const StudentNavigator = () => {
       <Tab.Screen name="Dashboard" component={StudentDashboardScreen} options={{ tabBarLabel: 'Dashboard' }} />
       <Tab.Screen name="Attendance" component={StudentAttendanceScreen} options={{ tabBarLabel: 'Attendance' }} />
       <Tab.Screen name="Marks" component={StudentMarksScreen} options={{ tabBarLabel: 'Marks' }} />
-      <Tab.Screen name="Notices" component={StudentNoticesScreen} options={{ tabBarLabel: 'Notices' }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Profile' }} />
+      <Tab.Screen name="Counselling" component={StudentCounsellingScreen} options={{ tabBarLabel: 'Counselling' }} />
+      <Tab.Screen name="Notes" component={StudentNotesScreen} options={{ tabBarLabel: 'Notes' }} />
+      <Tab.Screen name="Timetable" component={StudentTimetableScreen} options={{ tabBarLabel: 'Timetable' }} />
+      <Tab.Screen name="Profile" component={StudentProfileScreen} options={{ tabBarLabel: 'Profile' }} />
     </Tab.Navigator>
   );
 };

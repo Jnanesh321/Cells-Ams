@@ -11,7 +11,7 @@
     "start": "node dist/server.js",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
-    "db:seed": "ts-node --project tsconfig.json prisma/seed.ts",
+    "db:seed": "npx prisma db push && ts-node --project tsconfig.json prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset --force && npm run db:seed"
   },

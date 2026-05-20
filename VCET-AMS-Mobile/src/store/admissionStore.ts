@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AdmissionBatch, StudentDraft, AdmissionStats } from '../types';
 import * as admission from '../mock/admission';
 
@@ -57,94 +59,107 @@ const defaultStudentForm: StudentForm = {
   admissionType: 'CET',
 };
 
-export const useAdmissionStore = create<AdmissionStoreState>((set, get) => ({
-  batches: [],
-  currentBatch: null,
-  students: [],
-  stats: null,
-  loading: false,
-  batchForm: { ...defaultBatchForm },
-  studentForm: { ...defaultStudentForm },
+export const useAdmissionStore = create<AdmissionStoreState>()(
+  persist(
+    (set, get) => ({
+      batches: [],
+      currentBatch: null,
+      students: [],
+      stats: null,
+      loading: false,
+      batchForm: { ...defaultBatchForm },
+      studentForm: { ...defaultStudentForm },
 
-  setBatchForm: (field, value) => set((s) => ({ batchForm: { ...s.batchForm, [field]: value } })),
-  setStudentForm: (field, value) => set((s) => ({ studentForm: { ...s.studentForm, [field]: value } })),
-  resetBatchForm: () => set({ batchForm: { ...defaultBatchForm } }),
-  resetStudentForm: () => set({ studentForm: { ...defaultStudentForm } }),
+      setBatchForm: (field, value) => set((s) => ({ batchForm: { ...s.batchForm, [field]: value } })),
+      setStudentForm: (field, value) => set((s) => ({ studentForm: { ...s.studentForm, [field]: value } })),
+      resetBatchForm: () => set({ batchForm: { ...defaultBatchForm } }),
+      resetStudentForm: () => set({ studentForm: { ...defaultStudentForm } }),
 
-  loadBatches: async () => {
-    set({ loading: true });
-    const batches = await admission.getBatches();
-    set({ batches, loading: false });
-  },
+      loadBatches: async () => {
+        set({ loading: true });
+        const batches = await admission.getBatches();
+        set({ batches, loading: false });
+      },
 
-  loadStudents: async (batchId) => {
-    set({ loading: true });
-    const students = await admission.getStudentsByBatch(batchId);
-    set({ students, loading: false });
-  },
+      loadStudents: async (batchId) => {
+        set({ loading: true });
+        const students = await admission.getStudentsByBatch(batchId);
+        set({ students, loading: false });
+      },
 
-  loadStats: async () => {
-    const stats = await admission.getAdmissionStats();
-    set({ stats });
-  },
+      loadStats: async () => {
+        const stats = await admission.getAdmissionStats();
+        set({ stats });
+      },
 
-  createBatch: async () => {
-    const { batchForm } = get();
-    const batch = await admission.createBatch(batchForm);
-    await get().loadBatches();
-    return batch;
-  },
+      createBatch: async () => {
+        const { batchForm } = get();
+        const batch = await admission.createBatch(batchForm);
+        await get().loadBatches();
+        return batch;
+      },
 
-  addStudent: async (rollNo, batchId, department, section) => {
-    const { studentForm } = get();
-    await admission.addStudentDraft({
-      batchId,
-      rollNo,
-      name: studentForm.name,
-      gender: studentForm.gender,
-      phone: studentForm.phone,
-      parentPhone: studentForm.parentPhone,
-      admissionType: studentForm.admissionType,
-      department,
-      section,
-      mappedUSN: null,
-    });
-    set({ studentForm: { ...defaultStudentForm } });
-    await get().loadStudents(batchId);
-    await get().loadStats();
-  },
+      addStudent: async (rollNo, batchId, department, section) => {
+        const { studentForm } = get();
+        await admission.addStudentDraft({
+          batchId,
+          rollNo,
+          name: studentForm.name,
+          gender: studentForm.gender,
+          phone: studentForm.phone,
+          parentPhone: studentForm.parentPhone,
+          admissionType: studentForm.admissionType,
+          department,
+          section,
+          mappedUSN: null,
+        });
+        set({ studentForm: { ...defaultStudentForm } });
+        await get().loadStudents(batchId);
+        await get().loadStats();
+      },
 
-  bulkAddStudents: async (entries, batchId, department, section) => {
-    const drafts = entries.map((e) => ({
-      batchId,
-      rollNo: e.rollNo,
-      name: e.name,
-      gender: e.gender as any,
-      phone: e.phone,
-      parentPhone: e.parentPhone,
-      admissionType: e.admissionType as any,
-      department,
-      section,
-      mappedUSN: null,
-    }));
-    const count = await admission.bulkAddStudents(drafts);
-    await get().loadStudents(batchId);
-    await get().loadStats();
-    return count;
-  },
+      bulkAddStudents: async (entries, batchId, department, section) => {
+        const drafts = entries.map((e) => ({
+          batchId,
+          rollNo: e.rollNo,
+          name: e.name,
+          gender: e.gender as any,
+          phone: e.phone,
+          parentPhone: e.parentPhone,
+          admissionType: e.admissionType as any,
+          department,
+          section,
+          mappedUSN: null,
+        }));
+        const count = await admission.bulkAddStudents(drafts);
+        await get().loadStudents(batchId);
+        await get().loadStats();
+        return count;
+      },
 
-  mapUSN: async (draftId, usn) => {
-    await admission.updateUSNMapping(draftId, usn);
-    await get().loadStats();
-  },
+      mapUSN: async (draftId, usn) => {
+        await admission.updateUSNMapping(draftId, usn);
+        await get().loadStats();
+      },
 
-  bulkMapUSN: async (mappings) => {
-    const count = await admission.bulkMapUSN(mappings);
-    await get().loadStats();
-    return count;
-  },
+      bulkMapUSN: async (mappings) => {
+        const count = await admission.bulkMapUSN(mappings);
+        await get().loadStats();
+        return count;
+      },
 
-  getUnmapped: async () => {
-    return admission.getUnmappedStudents();
-  },
-}));
+      getUnmapped: async () => {
+        return admission.getUnmappedStudents();
+      },
+    }),
+    {
+      name: 'vcet.admission.store',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        batches: state.batches,
+        students: state.students,
+        stats: state.stats,
+      }),
+    }
+  )
+);

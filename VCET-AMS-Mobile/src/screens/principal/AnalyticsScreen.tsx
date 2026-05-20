@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, Text, View, RefreshControl } from 'react-native';
+import { useAppTheme } from '../../hooks/useAppTheme';
+import { useSettingsStore } from '../../store/settingsStore';
 import Card from '../../components/Card';
 import Loader from '../../components/Loader';
 
@@ -12,6 +14,8 @@ type DeptRow = {
 };
 
 export default function PrincipalAnalyticsScreen() {
+  const { colors } = useAppTheme();
+  const iaMaxMarks = useSettingsStore((s) => s.settings.iaMaxMarks);
   const [rows, setRows] = useState<DeptRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -43,44 +47,45 @@ export default function PrincipalAnalyticsScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-slate-950"
+      className="flex-1"
+      style={{ backgroundColor: colors.bg }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#f59e0b" />}
     >
       <View className="p-4">
-        <Text className="text-slate-400 text-xs uppercase tracking-widest mb-1">College Analytics</Text>
-        <Text className="text-white text-2xl font-bold mb-4">Cross-Department Overview</Text>
+        <Text className="text-xs uppercase tracking-widest mb-1" style={{ color: colors.textMuted }}>College Analytics</Text>
+        <Text className="text-2xl font-bold mb-4" style={{ color: colors.text }}>Cross-Department Overview</Text>
 
         <View className="flex-row gap-3 mb-4">
-          <Card className="flex-1 bg-slate-900 border-slate-800">
-            <Text className="text-slate-400 text-xs uppercase">Total Students</Text>
-            <Text className="text-white text-3xl font-bold mt-1">{totalStudents}</Text>
+          <Card className="flex-1" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+            <Text className="text-xs uppercase" style={{ color: colors.textMuted }}>Total Students</Text>
+            <Text className="text-3xl font-bold mt-1" style={{ color: colors.text }}>{totalStudents}</Text>
           </Card>
-          <Card className="flex-1 bg-slate-900 border-slate-800">
-            <Text className="text-slate-400 text-xs uppercase">Avg Attendance</Text>
+          <Card className="flex-1" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+            <Text className="text-xs uppercase" style={{ color: colors.textMuted }}>Avg Attendance</Text>
             <Text className="text-amber-400 text-3xl font-bold mt-1">{avgAttendance.toFixed(1)}%</Text>
           </Card>
         </View>
 
-        <Card className="bg-slate-900 border-slate-800 mb-4">
-          <Text className="text-white font-bold text-lg mb-4">Department Comparison</Text>
+        <Card className="mb-4" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+          <Text className="font-bold text-lg mb-4" style={{ color: colors.text }}>Department Comparison</Text>
           {rows.map((dept) => (
             <View key={dept.deptCode} className="mb-4 last:mb-0">
               <View className="flex-row justify-between items-center mb-2">
                 <View className="flex-1">
-                  <Text className="text-white font-semibold text-sm">{dept.deptCode}</Text>
-                  <Text className="text-slate-400 text-xs">{dept.deptName}</Text>
+                  <Text className="font-semibold text-sm" style={{ color: colors.text }}>{dept.deptCode}</Text>
+                  <Text className="text-xs" style={{ color: colors.textMuted }}>{dept.deptName}</Text>
                 </View>
-                <Text className="text-slate-400 text-xs">{dept.studentCount} students</Text>
+                <Text className="text-xs" style={{ color: colors.textMuted }}>{dept.studentCount} students</Text>
               </View>
               <View className="flex-row gap-2 mb-1">
                 <View className="flex-1">
                   <View className="flex-row justify-between mb-0.5">
-                    <Text className="text-slate-500 text-[10px]">Attendance</Text>
+                    <Text className="text-[10px]" style={{ color: colors.textMuted }}>Attendance</Text>
                     <Text className={`text-[10px] font-semibold ${dept.avgAttendance < 75 ? 'text-red-400' : 'text-green-400'}`}>
                       {dept.avgAttendance}%
                     </Text>
                   </View>
-                  <View className="bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <View className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
                     <View
                       className={`h-full rounded-full ${dept.avgAttendance < 75 ? 'bg-red-500' : 'bg-green-500'}`}
                       style={{ width: `${Math.min(dept.avgAttendance, 100)}%` }}
@@ -89,11 +94,11 @@ export default function PrincipalAnalyticsScreen() {
                 </View>
                 <View className="flex-1">
                   <View className="flex-row justify-between mb-0.5">
-                    <Text className="text-slate-500 text-[10px]">IA Avg</Text>
+                    <Text className="text-[10px]" style={{ color: colors.textMuted }}>IA Avg</Text>
                     <Text className="text-amber-400 text-[10px] font-semibold">{dept.avgIA}</Text>
                   </View>
-                  <View className="bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                    <View className="bg-amber-500 h-full rounded-full" style={{ width: `${(dept.avgIA / 30) * 100}%` }} />
+                  <View className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
+                    <View className="bg-amber-500 h-full rounded-full" style={{ width: `${(dept.avgIA / iaMaxMarks) * 100}%` }} />
                   </View>
                 </View>
               </View>
@@ -101,15 +106,15 @@ export default function PrincipalAnalyticsScreen() {
           ))}
         </Card>
 
-        <Card className="bg-slate-900 border-slate-800 mb-6">
-          <Text className="text-white font-bold text-lg mb-3">Key Insights</Text>
+        <Card className="mb-6" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+          <Text className="font-bold text-lg mb-3" style={{ color: colors.text }}>Key Insights</Text>
           {[
             { label: 'Departments above 75% attendance', value: rows.filter((r) => r.avgAttendance >= 75).length, color: 'text-green-400' },
             { label: 'Departments needing attention', value: rows.filter((r) => r.avgAttendance < 75).length, color: 'text-red-400' },
             { label: 'Highest IA average', value: rows.length > 0 ? Math.max(...rows.map((r) => r.avgIA)).toFixed(1) : 'N/A', color: 'text-amber-400' },
           ].map((insight, i) => (
-            <View key={i} className="flex-row justify-between items-center py-2 border-b border-slate-800 last:border-0">
-              <Text className="text-slate-300 text-sm">{insight.label}</Text>
+            <View key={i} className="flex-row justify-between items-center py-2 border-b last:border-0" style={{ borderBottomColor: colors.border }}>
+              <Text className="text-sm" style={{ color: colors.textSecondary }}>{insight.label}</Text>
               <Text className={`${insight.color} font-bold`}>{insight.value}</Text>
             </View>
           ))}

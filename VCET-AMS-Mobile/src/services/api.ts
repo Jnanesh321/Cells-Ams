@@ -1,4 +1,5 @@
 import axios from 'axios';
+import Constants from 'expo-constants';
 import NetInfo from '@react-native-community/netinfo';
 import { useAuthStore } from '../store/auth';
 import { queryClient, stableStringify, type CachedAxiosResponse } from './queryClient';
@@ -19,8 +20,10 @@ function buildCacheKey(config: AxiosCacheConfig): string {
   return [method, url, params, data].join('|');
 }
 
+const API_URL = Constants.expoConfig?.extra?.apiUrl ?? 'http://10.0.2.2:3000';
+
 const API = axios.create({
-  baseURL: 'http://10.0.2.2:3000',
+  baseURL: API_URL,
 });
 
 API.interceptors.request.use(

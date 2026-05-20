@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAdmissionStore } from '../../store/admissionStore';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import { generateRollNumber, getDeptCode } from '../../mock/admission';
 import Card from '../../components/Card';
 
@@ -17,6 +18,7 @@ type Entry = {
 };
 
 export default function BulkStudentEntryScreen() {
+  const { colors } = useAppTheme();
   const { batchForm, batches, loadBatches, bulkAddStudents, loadStudents } = useAdmissionStore();
   const [selectedBatchId, setSelectedBatchId] = useState('');
   const [count, setCount] = useState(5);
@@ -71,27 +73,28 @@ export default function BulkStudentEntryScreen() {
   const deptCode = selectedBatch ? getDeptCode(selectedBatch.department) : 'XX';
 
   return (
-    <ScrollView className="flex-1 bg-slate-950">
+    <ScrollView className="flex-1" style={{ backgroundColor: colors.bg }}>
       <View className="p-4">
-        <Text className="text-slate-400 text-xs uppercase tracking-widest mb-1">Admission Cell</Text>
-        <Text className="text-white text-2xl font-bold mb-4">Bulk Student Entry</Text>
+        <Text className="text-xs uppercase tracking-widest mb-1" style={{ color: colors.textMuted }}>Admission Cell</Text>
+        <Text className="text-2xl font-bold mb-4" style={{ color: colors.text }}>Bulk Student Entry</Text>
 
-        <Card className="bg-slate-900 border-slate-800 mb-4">
-          <Text className="text-white font-semibold text-sm mb-3">Select Batch</Text>
+        <Card className="mb-4" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+          <Text className="font-semibold text-sm mb-3" style={{ color: colors.text }}>Select Batch</Text>
           <View className="flex-row flex-wrap gap-2 mb-3">
             {batches.length === 0 && (
-              <View className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-                <Text className="text-slate-400 text-sm text-center">No batches created yet</Text>
-                <Text className="text-slate-500 text-xs text-center mt-1">Create a batch first in the Batches tab</Text>
+              <View className="rounded-lg p-4 border" style={{ backgroundColor: colors.bgTertiary, borderColor: colors.border }}>
+                <Text className="text-sm text-center" style={{ color: colors.textMuted }}>No batches created yet</Text>
+                <Text className="text-xs text-center mt-1" style={{ color: colors.textMuted }}>Create a batch first in the Batches tab</Text>
               </View>
             )}
             {batches.map((b) => (
               <TouchableOpacity
                 key={b.id}
                 onPress={() => setSelectedBatchId(b.id)}
-                className={`px-3 py-2 rounded-lg ${selectedBatchId === b.id ? 'bg-orange-600' : 'bg-slate-800 border border-slate-700'}`}
+                className="px-3 py-2 rounded-lg"
+                style={{ backgroundColor: selectedBatchId === b.id ? '#ea580c' : colors.bgCard, borderColor: selectedBatchId === b.id ? '#ea580c' : colors.border, borderWidth: selectedBatchId === b.id ? 0 : 1 }}
               >
-                <Text className={`text-xs font-medium ${selectedBatchId === b.id ? 'text-white' : 'text-slate-300'}`}>
+                <Text className="text-xs font-medium" style={{ color: selectedBatchId === b.id ? '#ffffff' : colors.textSecondary }}>
                   {b.department} {b.year} Sec {b.section}
                 </Text>
               </TouchableOpacity>
@@ -99,29 +102,30 @@ export default function BulkStudentEntryScreen() {
           </View>
 
           {selectedBatch && (
-            <View className="bg-slate-800 rounded-lg p-3 border border-slate-700">
-              <Text className="text-slate-300 text-xs">
+            <View className="rounded-lg p-3 border" style={{ backgroundColor: colors.bgTertiary, borderColor: colors.border }}>
+              <Text className="text-xs" style={{ color: colors.textSecondary }}>
                 Roll range: {selectedBatch.year}{deptCode}{String(selectedBatch.startRollNo).padStart(3, '0')} → {selectedBatch.year}{deptCode}{String(selectedBatch.endRollNo).padStart(3, '0')}
               </Text>
-              <Text className="text-slate-400 text-xs mt-1">Students so far: {selectedBatch.studentCount} / {selectedBatch.intakeSize}</Text>
+              <Text className="text-xs mt-1" style={{ color: colors.textMuted }}>Students so far: {selectedBatch.studentCount} / {selectedBatch.intakeSize}</Text>
             </View>
           )}
         </Card>
 
-        <Card className="bg-slate-900 border-slate-800 mb-4">
-          <Text className="text-white font-semibold text-sm mb-3">Number of Students</Text>
+        <Card className="mb-4" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+          <Text className="font-semibold text-sm mb-3" style={{ color: colors.text }}>Number of Students</Text>
           <View className="flex-row items-center gap-3">
-            <TouchableOpacity onPress={() => setCount(Math.max(1, count - 1))} className="bg-slate-800 w-10 h-10 rounded-lg items-center justify-center border border-slate-700">
-              <Text className="text-white text-lg">-</Text>
+            <TouchableOpacity onPress={() => setCount(Math.max(1, count - 1))} className="w-10 h-10 rounded-lg items-center justify-center border" style={{ backgroundColor: colors.bgCard, borderColor: colors.border }}>
+              <Text className="text-lg" style={{ color: colors.text }}>-</Text>
             </TouchableOpacity>
             <TextInput
-              className="bg-slate-800 rounded-lg px-4 py-2 text-white text-center text-lg font-bold border border-slate-700 w-20"
+              className="rounded-lg px-4 py-2 text-center text-lg font-bold w-20"
+              style={{ backgroundColor: colors.bgTertiary, color: colors.text, borderColor: colors.border, borderWidth: 1 }}
               value={String(count)}
               onChangeText={(v) => setCount(Math.max(1, parseInt(v) || 1))}
               keyboardType="number-pad"
             />
-            <TouchableOpacity onPress={() => setCount(Math.min(20, count + 1))} className="bg-slate-800 w-10 h-10 rounded-lg items-center justify-center border border-slate-700">
-              <Text className="text-white text-lg">+</Text>
+            <TouchableOpacity onPress={() => setCount(Math.min(20, count + 1))} className="w-10 h-10 rounded-lg items-center justify-center border" style={{ backgroundColor: colors.bgCard, borderColor: colors.border }}>
+              <Text className="text-lg" style={{ color: colors.text }}>+</Text>
             </TouchableOpacity>
           </View>
           <TouchableOpacity onPress={generateEntries} className="bg-blue-600 rounded-xl p-3 mt-4 items-center">
@@ -130,48 +134,51 @@ export default function BulkStudentEntryScreen() {
         </Card>
 
         {entries.map((entry, idx) => (
-          <Card key={entry.key} className="bg-slate-900 border-slate-800 mb-3">
+          <Card key={entry.key} className="mb-3" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
             <View className="flex-row items-center justify-between mb-3">
               <View className="bg-orange-600 rounded-lg px-3 py-1">
                 <Text className="text-white text-xs font-mono font-bold">{entry.key}</Text>
               </View>
-              <Text className="text-slate-400 text-xs">#{idx + 1}</Text>
+              <Text className="text-xs" style={{ color: colors.textMuted }}>#{idx + 1}</Text>
             </View>
 
-            <Text className="text-slate-300 text-xs font-medium mb-1">Student Name</Text>
+            <Text className="text-xs font-medium mb-1" style={{ color: colors.textSecondary }}>Student Name</Text>
             <TextInput
-              className="bg-slate-800 rounded-lg px-3 py-2.5 text-white text-sm border border-slate-700 mb-3"
+              className="rounded-lg px-3 py-2.5 text-sm mb-3"
+              style={{ backgroundColor: colors.bgInput, color: colors.text, borderColor: colors.border, borderWidth: 1 }}
               placeholder="Full name"
-              placeholderTextColor="#64748b"
+              placeholderTextColor={colors.placeholder}
               value={entry.name}
               onChangeText={(v) => updateEntry(entry.key, 'name', v)}
             />
 
             <View className="flex-row gap-2 mb-3">
               <View className="flex-1">
-                <Text className="text-slate-300 text-xs font-medium mb-1">Gender</Text>
+                <Text className="text-xs font-medium mb-1" style={{ color: colors.textSecondary }}>Gender</Text>
                 <View className="flex-row gap-1">
                   {GENDERS.map((g) => (
                     <TouchableOpacity
                       key={g}
                       onPress={() => updateEntry(entry.key, 'gender', g)}
-                      className={`flex-1 py-2 rounded-lg ${entry.gender === g ? 'bg-orange-600' : 'bg-slate-800 border border-slate-700'}`}
+                      className="flex-1 py-2 rounded-lg"
+                      style={{ backgroundColor: entry.gender === g ? '#ea580c' : colors.bgCard, borderColor: entry.gender === g ? '#ea580c' : colors.border, borderWidth: entry.gender === g ? 0 : 1 }}
                     >
-                      <Text className={`text-xs text-center font-medium ${entry.gender === g ? 'text-white' : 'text-slate-300'}`}>{g[0]}</Text>
+                      <Text className="text-xs text-center font-medium" style={{ color: entry.gender === g ? '#ffffff' : colors.textSecondary }}>{g[0]}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               </View>
               <View className="flex-1">
-                <Text className="text-slate-300 text-xs font-medium mb-1">Admission</Text>
+                <Text className="text-xs font-medium mb-1" style={{ color: colors.textSecondary }}>Admission</Text>
                 <View className="flex-row gap-1">
                   {TYPES.map((t) => (
                     <TouchableOpacity
                       key={t}
                       onPress={() => updateEntry(entry.key, 'admissionType', t)}
-                      className={`flex-1 py-2 rounded-lg ${entry.admissionType === t ? 'bg-orange-600' : 'bg-slate-800 border border-slate-700'}`}
+                      className="flex-1 py-2 rounded-lg"
+                      style={{ backgroundColor: entry.admissionType === t ? '#ea580c' : colors.bgCard, borderColor: entry.admissionType === t ? '#ea580c' : colors.border, borderWidth: entry.admissionType === t ? 0 : 1 }}
                     >
-                      <Text className={`text-[9px] text-center font-medium ${entry.admissionType === t ? 'text-white' : 'text-slate-300'}`}>{t}</Text>
+                      <Text className="text-[9px] text-center font-medium" style={{ color: entry.admissionType === t ? '#ffffff' : colors.textSecondary }}>{t}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -180,11 +187,12 @@ export default function BulkStudentEntryScreen() {
 
             <View className="flex-row gap-2 mb-1">
               <View className="flex-1">
-                <Text className="text-slate-300 text-xs font-medium mb-1">Student Phone</Text>
+                <Text className="text-xs font-medium mb-1" style={{ color: colors.textSecondary }}>Student Phone</Text>
                 <TextInput
-                  className="bg-slate-800 rounded-lg px-3 py-2 text-white text-sm border border-slate-700"
+                  className="rounded-lg px-3 py-2 text-sm"
+                  style={{ backgroundColor: colors.bgInput, color: colors.text, borderColor: colors.border, borderWidth: 1 }}
                   placeholder="Phone"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.placeholder}
                   value={entry.phone}
                   onChangeText={(v) => updateEntry(entry.key, 'phone', v)}
                   keyboardType="phone-pad"
@@ -192,11 +200,12 @@ export default function BulkStudentEntryScreen() {
                 />
               </View>
               <View className="flex-1">
-                <Text className="text-slate-300 text-xs font-medium mb-1">Parent Phone</Text>
+                <Text className="text-xs font-medium mb-1" style={{ color: colors.textSecondary }}>Parent Phone</Text>
                 <TextInput
-                  className="bg-slate-800 rounded-lg px-3 py-2 text-white text-sm border border-slate-700"
+                  className="rounded-lg px-3 py-2 text-sm"
+                  style={{ backgroundColor: colors.bgInput, color: colors.text, borderColor: colors.border, borderWidth: 1 }}
                   placeholder="Parent phone"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.placeholder}
                   value={entry.parentPhone}
                   onChangeText={(v) => updateEntry(entry.key, 'parentPhone', v)}
                   keyboardType="phone-pad"

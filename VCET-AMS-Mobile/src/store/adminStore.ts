@@ -1,6 +1,9 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { mockUsers } from '../mock/users';
 import { mockStudents } from '../mock/students';
+import type { StudentAdmission } from '../types';
 
 export type AdminUser = {
   id: string;
@@ -22,6 +25,7 @@ export type AdminUser = {
 
 interface AdminStore {
   adminUsers: AdminUser[];
+  studentAdmissions: StudentAdmission[];
   loadMockData: () => void;
   addUser: (user: AdminUser) => void;
   updateUser: (id: string, updates: Partial<AdminUser>) => void;
@@ -29,6 +33,11 @@ interface AdminStore {
   getUserById: (id: string) => AdminUser | undefined;
   getUsersByRole: (role: string) => AdminUser[];
   getHODForDepartment: (dept: string) => AdminUser | undefined;
+  addStudentAdmission: (admission: StudentAdmission) => void;
+  updateStudentAdmission: (id: string, updates: Partial<StudentAdmission>) => void;
+  deleteStudentAdmission: (id: string) => void;
+  getStudentAdmissionById: (id: string) => StudentAdmission | undefined;
+  getAllStudentAdmissions: () => StudentAdmission[];
 }
 
 function mapMockUser(key: string, u: any): AdminUser {
@@ -47,48 +56,79 @@ function mapMockUser(key: string, u: any): AdminUser {
   };
 }
 
-export const useAdminStore = create<AdminStore>((set, get) => ({
-  adminUsers: [],
+export const useAdminStore = create<AdminStore>()(
+  persist(
+    (set, get) => ({
+      adminUsers: [],
+      studentAdmissions: [],
 
-  loadMockData: () => {
-    const staffUsers = Object.entries(mockUsers as Record<string, any>).map(
-      ([key, u]) => mapMockUser(key, u)
-    );
-    const studentUsers = mockStudents.map((s: any) => ({
-      id: s.usn,
-      name: s.name,
-      role: 'STUDENT',
-      password: s.password ?? 'vcet@123',
-      department: s.department,
-      section: s.section,
-      semester: s.semester,
-      email: s.email,
-      phone: s.phone,
-      dateOfBirth: s.dateOfBirth,
-    }));
-    set({ adminUsers: [...staffUsers, ...studentUsers] });
-  },
+      loadMockData: () => {
+        const current = get().adminUsers;
+        if (current.length > 0) return;
 
-  addUser: (user) =>
-    set((state) => ({ adminUsers: [user, ...state.adminUsers] })),
+        const staffUsers = Object.entries(mockUsers as Record<string, any>).map(
+          ([key, u]) => mapMockUser(key, u)
+        );
+        const studentUsers = mockStudents.map((s: any) => ({
+          id: s.usn,
+          name: s.name,
+          role: 'STUDENT',
+          password: s.password ?? 'vcet@123',
+          department: s.department,
+          section: s.section,
+          semester: s.semester,
+          email: s.email,
+          phone: s.phone,
+          dateOfBirth: s.dateOfBirth,
+        }));
+        set({ adminUsers: [...staffUsers, ...studentUsers] });
+      },
 
-  updateUser: (id, updates) =>
-    set((state) => ({
-      adminUsers: state.adminUsers.map((u) =>
-        u.id === id ? { ...u, ...updates } : u
-      ),
-    })),
+      addUser: (user) =>
+        set((state) => ({ adminUsers: [user, ...state.adminUsers] })),
 
-  deleteUser: (id) =>
-    set((state) => ({
-      adminUsers: state.adminUsers.filter((u) => u.id !== id),
-    })),
+      updateUser: (id, updates) =>
+        set((state) => ({
+          adminUsers: state.adminUsers.map((u) =>
+            u.id === id ? { ...u, ...updates } : u
+          ),
+        })),
 
-  getUserById: (id) => get().adminUsers.find((u) => u.id === id),
+      deleteUser: (id) =>
+        set((state) => ({
+          adminUsers: state.adminUsers.filter((u) => u.id !== id),
+        })),
 
-  getUsersByRole: (role) =>
-    get().adminUsers.filter((u) => u.role === role),
+      getUserById: (id) => get().adminUsers.find((u) => u.id === id),
 
-  getHODForDepartment: (dept) =>
-    get().adminUsers.find((u) => u.role === 'HOD' && u.department === dept),
-}));
+      getUsersByRole: (role) =>
+        get().adminUsers.filter((u) => u.role === role),
+
+      getHODForDepartment: (dept) =>
+        get().adminUsers.find((u) => u.role === 'HOD' && u.department === dept),
+
+      addStudentAdmission: (admission) =>
+        set((state) => ({ studentAdmissions: [admission, ...state.studentAdmissions] })),
+
+      updateStudentAdmission: (id, updates) =>
+        set((state) => ({
+          studentAdmissions: state.studentAdmissions.map((a) =>
+            a.id === id ? { ...a, ...updates } : a
+          ),
+        })),
+
+      deleteStudentAdmission: (id) =>
+        set((state) => ({
+          studentAdmissions: state.studentAdmissions.filter((a) => a.id !== id),
+        })),
+
+      getStudentAdmissionById: (id) => get().studentAdmissions.find((a) => a.id === id),
+
+      getAllStudentAdmissions: () => get().studentAdmissions,
+    }),
+    {
+      name: 'vcet.admin.store',
+      storage: createJSONStorage(() => AsyncStorage),
+    }
+  )
+);

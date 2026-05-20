@@ -2,11 +2,13 @@ import React, { useMemo } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../../store/auth';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import { getFacultySubjects } from '../../mock/facultySubjects';
 import Card from '../../components/Card';
 
 export default function MarksSubjectPickerScreen() {
   const { user } = useAuthStore();
+  const { colors } = useAppTheme();
   const navigation = useNavigation<any>();
 
   const subjects = useMemo(() => {
@@ -19,10 +21,10 @@ export default function MarksSubjectPickerScreen() {
   }, [user]);
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1" style={{ backgroundColor: colors.bg }}>
       <View className="p-4 pb-2">
-        <Text className="text-slate-400 text-xs uppercase tracking-widest">IA Marks Entry</Text>
-        <Text className="text-white text-2xl font-bold mt-1">Select Subject</Text>
+        <Text className="text-xs uppercase tracking-widest" style={{ color: colors.textMuted }}>IA Marks Entry</Text>
+        <Text className="text-2xl font-bold mt-1" style={{ color: colors.text }}>Select Subject</Text>
       </View>
       <FlatList
         className="px-4"
@@ -31,18 +33,19 @@ export default function MarksSubjectPickerScreen() {
         renderItem={({ item }: any) => (
           <TouchableOpacity
             onPress={() =>
-              navigation.navigate('IAMarksEntry', {
+              navigation.navigate('VTUIAMarksEntry', {
+                subjectCode: item.subjectCode,
                 subjectId: item.subjectCode,
                 subjectName: item.subject,
                 section: item.section ?? 'A',
               })
             }
           >
-            <Card className="bg-slate-900 border-slate-800 mb-2">
+            <Card className="mb-2" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
               <View className="flex-row justify-between items-center">
                 <View className="flex-1">
-                  <Text className="text-white font-semibold text-sm">{item.subject}</Text>
-                  <Text className="text-slate-400 text-xs mt-0.5">
+                  <Text className="font-semibold text-sm" style={{ color: colors.text }}>{item.subject}</Text>
+                  <Text className="text-xs mt-0.5" style={{ color: colors.textMuted }}>
                     {item.subjectCode} • {item.section ? `Section ${item.section}` : ''} • Sem {item.semester}
                   </Text>
                 </View>
@@ -52,8 +55,8 @@ export default function MarksSubjectPickerScreen() {
           </TouchableOpacity>
         )}
         ListEmptyComponent={
-          <Card className="bg-slate-900 border-slate-800">
-            <Text className="text-slate-400 text-sm text-center">No subjects assigned</Text>
+          <Card style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+            <Text className="text-sm text-center" style={{ color: colors.textMuted }}>No subjects assigned</Text>
           </Card>
         }
       />

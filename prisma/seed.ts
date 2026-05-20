@@ -6,200 +6,417 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding database...");
 
-  const dept = await prisma.department.upsert({
+  const hash = (pw: string) => bcrypt.hashSync(pw, 10);
+
+  // ==================== DEPARTMENTS ====================
+  const cse = await prisma.department.upsert({
     where: { code: "CSE" },
     update: {},
     create: { name: "Computer Science & Engineering", code: "CSE" },
   });
+  const aiml = await prisma.department.upsert({
+    where: { code: "AIML" },
+    update: {},
+    create: { name: "Artificial Intelligence & Machine Learning", code: "AIML" },
+  });
+  const ece = await prisma.department.upsert({
+    where: { code: "ECE" },
+    update: {},
+    create: { name: "Electronics & Communication Engineering", code: "ECE" },
+  });
+  const mech = await prisma.department.upsert({
+    where: { code: "MECH" },
+    update: {},
+    create: { name: "Mechanical Engineering", code: "MECH" },
+  });
 
-  const subjectData = [
-    { code: "21CS51", name: "Management & Entrepreneurship for IT", credits: 3 },
-    { code: "21CS52", name: "Computer Networks & Security", credits: 4 },
-    { code: "21CS53", name: "Database Management System", credits: 4 },
-    { code: "21CS54", name: "Design Patterns", credits: 3 },
-    { code: "21CS55", name: "Automata Theory & Compiler Design", credits: 4 },
-    { code: "21CS56", name: "Full Stack Development", credits: 3 },
-    { code: "21CS57", name: "Operating Systems", credits: 4 },
-    { code: "21CS58", name: "Software Engineering", credits: 3 },
+  // ==================== SUBJECTS (Semester 2) ====================
+  const cseSubjects = [
+    { code: "24CS21", name: "Data Structures & Algorithms", credits: 4 },
+    { code: "24CS22", name: "Object Oriented Programming", credits: 4 },
+    { code: "24CS23", name: "Discrete Mathematical Structures", credits: 3 },
+    { code: "24CS24", name: "Digital Design & Computer Organization", credits: 4 },
+    { code: "24CS25", name: "Mathematics for Computing - II", credits: 3 },
+    { code: "24CSL26", name: "Data Structures Lab", credits: 2 },
+    { code: "24CSL27", name: "OOP Lab", credits: 2 },
+    { code: "24CS28", name: "Environmental Science", credits: 2 },
   ];
 
-  const subjects: Awaited<ReturnType<typeof prisma.subject.create>>[] = [];
-  for (const s of subjectData) {
+  const aimlSubjects = [
+    { code: "24AI21", name: "Data Structures & Algorithms", credits: 4 },
+    { code: "24AI22", name: "Object Oriented Programming", credits: 4 },
+    { code: "24AI23", name: "Discrete Mathematical Structures", credits: 3 },
+    { code: "24AI24", name: "Digital Design & Computer Organization", credits: 4 },
+    { code: "24AI25", name: "Mathematics for Computing - II", credits: 3 },
+    { code: "24AIL26", name: "Data Structures Lab", credits: 2 },
+    { code: "24AIL27", name: "OOP Lab", credits: 2 },
+    { code: "24AI28", name: "Environmental Science", credits: 2 },
+  ];
+
+  const createdSubjects: Awaited<ReturnType<typeof prisma.subject.create>>[] = [];
+  for (const s of cseSubjects) {
     const sub = await prisma.subject.upsert({
       where: { code: s.code },
       update: {},
-      create: { ...s, semester: "5", departmentId: dept.id },
+      create: { ...s, semester: "2", departmentId: cse.id },
     });
-    subjects.push(sub);
+    createdSubjects.push(sub);
+  }
+  for (const s of aimlSubjects) {
+    const sub = await prisma.subject.upsert({
+      where: { code: s.code },
+      update: {},
+      create: { ...s, semester: "2", departmentId: aiml.id },
+    });
+    createdSubjects.push(sub);
   }
 
-  const adminPassword = await bcrypt.hash("admin123", 10);
-  const facultyPassword = await bcrypt.hash("faculty123", 10);
-  const studentPassword = await bcrypt.hash("student123", 10);
-  const parentPassword = await bcrypt.hash("parent123", 10);
-  const hodPassword = await bcrypt.hash("hod123", 10);
-
+  // ==================== ADMIN / HOD / PRINCIPAL / FACULTY ====================
   const admin = await prisma.user.upsert({
     where: { usn: "ADMIN001" },
     update: {},
-    create: { usn: "ADMIN001", name: "System Admin", email: "admin@vcet.edu", passwordHash: adminPassword, role: Role.ADMIN, departmentId: dept.id },
+    create: { usn: "ADMIN001", name: "System Admin", email: "admin@vcet.edu", passwordHash: hash("admin@123"), role: Role.ADMIN, departmentId: cse.id },
   });
 
-  const hod = await prisma.user.upsert({
-    where: { usn: "HOD001" },
+  const hodCse = await prisma.user.upsert({
+    where: { usn: "HOD_CSE" },
     update: {},
-    create: { usn: "HOD001", name: "Dr. Rajesh Kumar", email: "hod.cse@vcet.edu", passwordHash: hodPassword, role: Role.HOD, departmentId: dept.id },
+    create: { usn: "HOD_CSE", name: "Prof. Pradeep Kumar KG", email: "hod.cse@vcet.ac.in", passwordHash: hash("hod@123"), role: Role.HOD, departmentId: cse.id },
+  });
+  await prisma.facultyProfile.upsert({
+    where: { userId: hodCse.id },
+    update: {},
+    create: { userId: hodCse.id, designation: "Head of Department" },
+  });
+
+  const hodAiml = await prisma.user.upsert({
+    where: { usn: "HOD_AIML" },
+    update: {},
+    create: { usn: "HOD_AIML", name: "Dr. Ajith Hebbar Hosmata", email: "hod.aiml@vcet.edu", passwordHash: hash("hod@123"), role: Role.HOD, departmentId: aiml.id },
+  });
+  await prisma.facultyProfile.upsert({
+    where: { userId: hodAiml.id },
+    update: {},
+    create: { userId: hodAiml.id, designation: "Head of Department" },
   });
 
   const principal = await prisma.user.upsert({
-    where: { usn: "PRINCIPAL001" },
+    where: { usn: "PRINCIPAL" },
     update: {},
-    create: { usn: "PRINCIPAL001", name: "Dr. Venkatesh Prasad", email: "principal@vcet.edu", passwordHash: await bcrypt.hash("principal123", 10), role: Role.PRINCIPAL, departmentId: dept.id },
+    create: { usn: "PRINCIPAL", name: "Dr. Mahesh Prasanna K", email: "principal@vcet.edu", passwordHash: hash("principal@123"), role: Role.PRINCIPAL, departmentId: cse.id },
   });
 
-  const facultyNames = [
-    { name: "Prof. Anil Kumar", email: "anil@vcet.edu", designation: "Assistant Professor" },
-    { name: "Prof. Sunita Rao", email: "sunita@vcet.edu", designation: "Associate Professor" },
-    { name: "Prof. Vikram Singh", email: "vikram@vcet.edu", designation: "Assistant Professor" },
-    { name: "Prof. Priya Sharma", email: "priya@vcet.edu", designation: "Assistant Professor" },
-    { name: "Prof. Krishna Murthy", email: "krishna@vcet.edu", designation: "Professor" },
+  // CSE Faculty
+  const cseFacultyData = [
+    { usn: "FAC_CSE_001", name: "Mrs. Akshaya D. Shetty", designation: "Assistant Professor" },
+    { usn: "FAC_CSE_002", name: "Mr. Ajay Shastry C G", designation: "Assistant Professor" },
+    { usn: "FAC_CSE_003", name: "Mrs. Vaishnavi K V", designation: "Assistant Professor" },
+    { usn: "FAC_CSE_004", name: "Mr. Venkatesh Y C", designation: "Assistant Professor" },
   ];
 
-  const facultyProfiles: Awaited<ReturnType<typeof prisma.facultyProfile.create>>[] = [];
-  for (let i = 0; i < facultyNames.length; i++) {
+  const cseFacultyProfiles: Awaited<ReturnType<typeof prisma.facultyProfile.create>>[] = [];
+  for (const f of cseFacultyData) {
     const user = await prisma.user.upsert({
-      where: { usn: `FAC${String(i + 1).padStart(3, "0")}` },
+      where: { usn: f.usn },
       update: {},
-      create: { usn: `FAC${String(i + 1).padStart(3, "0")}`, name: facultyNames[i].name, email: facultyNames[i].email, passwordHash: facultyPassword, role: Role.FACULTY, departmentId: dept.id },
+      create: { usn: f.usn, name: f.name, email: `${f.usn.toLowerCase()}@vcet.edu`, passwordHash: hash("faculty@123"), role: Role.FACULTY, departmentId: cse.id },
     });
     const fp = await prisma.facultyProfile.upsert({
       where: { userId: user.id },
       update: {},
-      create: { userId: user.id, designation: facultyNames[i].designation },
+      create: { userId: user.id, designation: f.designation },
     });
-    facultyProfiles.push(fp);
+    cseFacultyProfiles.push(fp);
   }
 
-  const studentNames = [
-    "Arjun Patel", "Ananya Reddy", "Bhavesh Shah", "Charvi Jain", "Dev Patel",
-    "Eshwar Naik", "Fathima Khan", "Ganesh Bhat", "Harshini Devi", "Ishaan Chatterjee",
-    "Jashwanth Rao", "Kavya Singh", "Lakshmi Nair", "Madhav Iyer", "Nisha Gupta",
-    "Omkar Desai", "Pooja Verma", "Qureshi Ansari", "Rohan Pillai", "Sneha Kumari",
-    "Tarun Raj", "Uma Krishnan", "Vijay Kumar", "Wafa Fatima", "Xavier Dsouza",
-    "Yashoda Devi", "Zaid Ahmed", "Anushka Sen", "Bala Murthy", "Chitra Devi",
-    "Dinesh Yadav", "Elakiya Ram", "Farhan Khan", "Gopal Krishna", "Harini Venkat",
-    "Ibrahim Shaik", "Jaya Prakash", "Kamala Devi", "Lakshman Rao", "Meenakshi Sundaram",
+  // ==================== REAL STUDENTS ====================
+  interface StudentEntry {
+    usn: string;
+    name: string;
+    departmentId: number;
+    section: string;
+  }
+
+  const realStudents: StudentEntry[] = [
+    { usn: "4VP24CS038", name: "Jnanesh Sharma H", departmentId: cse.id, section: "A" },
+    { usn: "4VP24CS089", name: "Shankar",        departmentId: cse.id, section: "A" },
+    { usn: "4VP24CS074", name: "Kiran",           departmentId: cse.id, section: "A" },
+    { usn: "4VP24CS049", name: "Ananya M",        departmentId: cse.id, section: "A" },
+    { usn: "4VP24CS060", name: "Muralikrishna",    departmentId: cse.id, section: "A" },
+    { usn: "4VP24CS051", name: "Manish DP",       departmentId: cse.id, section: "A" },
+    { usn: "4VP24AI037", name: "Samved Balike",   departmentId: aiml.id, section: "A" },
   ];
 
   const studentProfiles: Awaited<ReturnType<typeof prisma.studentProfile.create>>[] = [];
-  for (let i = 0; i < 40; i++) {
-    const usn = `1VE21CS${String(i + 1).padStart(3, "0")}`;
-    const section = i < 20 ? "A" : "B";
+  for (const s of realStudents) {
     const user = await prisma.user.upsert({
-      where: { usn },
+      where: { usn: s.usn },
       update: {},
-      create: { usn, name: studentNames[i], email: `${usn.toLowerCase()}@vcet.edu`, passwordHash: studentPassword, role: Role.STUDENT, departmentId: dept.id },
+      create: {
+        usn: s.usn,
+        name: s.name,
+        email: `${s.usn.toLowerCase()}@vcet.edu`,
+        passwordHash: hash("vcet@123"),
+        role: Role.STUDENT,
+        departmentId: s.departmentId,
+      },
     });
     const sp = await prisma.studentProfile.upsert({
       where: { userId: user.id },
       update: {},
-      create: { userId: user.id, semester: "5", section, batch: "2021-2025" },
+      create: { userId: user.id, semester: "2", section: s.section, batch: "2024-2028" },
     });
     studentProfiles.push(sp);
   }
 
-  for (let i = 0; i < 10; i++) {
-    const parentUSN = `PAR${String(i + 1).padStart(3, "0")}`;
-    const parentName = `${studentNames[i].split(" ")[0]} Parent`;
-    const parent = await prisma.user.upsert({
-      where: { usn: parentUSN },
+  // ==================== ADDITIONAL DEMO STUDENTS (Semester 2, section B) ====================
+  const demoStudents: StudentEntry[] = [
+    { usn: "4VP24CS061", name: "Demo Student 1", departmentId: cse.id, section: "B" },
+    { usn: "4VP24CS062", name: "Demo Student 2", departmentId: cse.id, section: "B" },
+    { usn: "4VP24CS063", name: "Demo Student 3", departmentId: cse.id, section: "B" },
+  ];
+
+  for (const s of demoStudents) {
+    const user = await prisma.user.upsert({
+      where: { usn: s.usn },
       update: {},
-      create: { usn: parentUSN, name: parentName, email: `${parentUSN.toLowerCase()}@vcet.edu`, passwordHash: parentPassword, role: Role.PARENT, departmentId: dept.id },
+      create: {
+        usn: s.usn,
+        name: s.name,
+        email: `${s.usn.toLowerCase()}@vcet.edu`,
+        passwordHash: hash("vcet@123"),
+        role: Role.STUDENT,
+        departmentId: s.departmentId,
+      },
+    });
+    const sp = await prisma.studentProfile.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: { userId: user.id, semester: "2", section: s.section, batch: "2024-2028" },
+    });
+    studentProfiles.push(sp);
+  }
+
+  // ==================== PARENTS ====================
+  const parentData = [
+    { usn: "PARENT_4VP24CS038", name: "Jnanesh Parent", childUsn: "4VP24CS038" },
+    { usn: "PARENT_4VP24CS089", name: "Shankar Parent", childUsn: "4VP24CS089" },
+    { usn: "PARENT_4VP24AI037", name: "Samved Parent", childUsn: "4VP24AI037" },
+  ];
+
+  for (const p of parentData) {
+    const child = await prisma.user.findUnique({ where: { usn: p.childUsn } });
+    if (!child) continue;
+    const parent = await prisma.user.upsert({
+      where: { usn: p.usn },
+      update: {},
+      create: { usn: p.usn, name: p.name, email: `${p.usn.toLowerCase()}@vcet.edu`, passwordHash: hash("parent@123"), role: Role.PARENT, departmentId: child.departmentId ?? undefined },
     });
     await prisma.parentStudent.upsert({
-      where: { parentId_studentId: { parentId: parent.id, studentId: studentProfiles[i].userId } },
+      where: { parentId_studentId: { parentId: parent.id, studentId: child.id } },
       update: {},
-      create: { parentId: parent.id, studentId: studentProfiles[i].userId },
+      create: { parentId: parent.id, studentId: child.id },
     });
   }
 
-  for (let s = 0; s < subjects.length; s++) {
-    await prisma.classAssignment.upsert({
-      where: { subjectId_section_academicYear: { subjectId: subjects[s].id, section: "A", academicYear: "2024-2025" } },
-      update: {},
-      create: { facultyProfileId: facultyProfiles[s % facultyProfiles.length].id, subjectId: subjects[s].id, section: "A", semester: "5", academicYear: "2024-2025", assignedByUserId: admin.id },
-    });
-    await prisma.classAssignment.upsert({
-      where: { subjectId_section_academicYear: { subjectId: subjects[s].id, section: "B", academicYear: "2024-2025" } },
-      update: {},
-      create: { facultyProfileId: facultyProfiles[(s + 1) % facultyProfiles.length].id, subjectId: subjects[s].id, section: "B", semester: "5", academicYear: "2024-2025", assignedByUserId: admin.id },
-    });
+  // ==================== CLASS ASSIGNMENTS ====================
+  const cseSubjectsSem2 = createdSubjects.filter(s => s.code.startsWith("24CS"));
+  for (let s = 0; s < cseSubjectsSem2.length; s++) {
+    const facultyIdx = s % cseFacultyProfiles.length;
+    for (const section of ["A", "B"]) {
+      await prisma.classAssignment.upsert({
+        where: { subjectId_section_academicYear: { subjectId: cseSubjectsSem2[s].id, section, academicYear: "2025-2026" } },
+        update: {},
+        create: {
+          facultyProfileId: cseFacultyProfiles[facultyIdx].id,
+          subjectId: cseSubjectsSem2[s].id,
+          section,
+          semester: "2",
+          academicYear: "2025-2026",
+          assignedByUserId: admin.id,
+        },
+      });
+    }
   }
 
-  const startDate = new Date("2024-11-01");
+  // ==================== ATTENDANCE RECORDS (30 days) ====================
+  const startDate = new Date("2025-04-01");
   for (let day = 0; day < 30; day++) {
     const date = new Date(startDate);
     date.setDate(date.getDate() + day);
     const dayOfWeek = date.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) continue;
-    const subjectIdx = day % subjects.length;
-    const subj = subjects[subjectIdx];
+
+    const subjectIdx = day % cseSubjectsSem2.length || 0;
+    const subj = cseSubjectsSem2[subjectIdx];
+
     for (const sp of studentProfiles) {
-      const section = sp.section;
       const rand = Math.random();
       let status: AttendanceStatus;
-      if (rand < 0.12) status = AttendanceStatus.ABSENT;
-      else if (rand < 0.17) status = AttendanceStatus.OD;
+      if (rand < 0.10) status = AttendanceStatus.ABSENT;
+      else if (rand < 0.15) status = AttendanceStatus.OD;
       else status = AttendanceStatus.PRESENT;
-      try {
-        await prisma.attendanceRecord.create({
-          data: {
-            studentProfileId: sp.id,
-            subjectId: subj.id,
-            date,
-            status,
-            markedByUserId: admin.id,
-          },
-        }).catch(() => {});
-      } catch {}
+
+      await prisma.attendanceRecord.create({
+        data: {
+          studentProfileId: sp.id,
+          subjectId: subj.id,
+          date,
+          status,
+          markedByUserId: admin.id,
+        },
+      }).catch(() => {});
     }
   }
 
+  // ==================== IA MARKS (Old System) ====================
   for (const sp of studentProfiles) {
-    for (const subj of subjects) {
-      const marks = 18 + Math.floor(Math.random() * 12);
-      await prisma.iAMark.upsert({
-        where: { studentProfileId_subjectId_iaNumber: { studentProfileId: sp.id, subjectId: subj.id, iaNumber: 1 } },
+    for (const subj of cseSubjectsSem2) {
+      for (let iaNum = 1; iaNum <= 3; iaNum++) {
+        const marks = 18 + Math.floor(Math.random() * 12);
+        await prisma.iAMark.upsert({
+          where: { studentProfileId_subjectId_iaNumber: { studentProfileId: sp.id, subjectId: subj.id, iaNumber: iaNum } },
+          update: {},
+          create: {
+            studentProfileId: sp.id,
+            subjectId: subj.id,
+            iaNumber: iaNum,
+            marksObtained: marks,
+            maxMarks: 30,
+            enteredByUserId: admin.id,
+          },
+        });
+      }
+    }
+  }
+
+  // ==================== VTU IA MARKS (New Q1-Q4 System) ====================
+  for (const sp of studentProfiles) {
+    for (const subj of cseSubjectsSem2) {
+      for (let iaNum = 1; iaNum <= 2; iaNum++) {
+        const q1 = 15 + Math.floor(Math.random() * 11);
+        const q2 = 16 + Math.floor(Math.random() * 10);
+        const q3 = 14 + Math.floor(Math.random() * 12);
+        const q4 = 15 + Math.floor(Math.random() * 11);
+        const sectionA = Math.max(q1, q2);
+        const sectionB = Math.max(q3, q4);
+        const total = Math.min(sectionA + sectionB, 50);
+
+        await prisma.vTUIAMark.upsert({
+          where: { studentProfileId_subjectId_iaNumber: { studentProfileId: sp.id, subjectId: subj.id, iaNumber: iaNum } },
+          update: {},
+          create: {
+            studentProfileId: sp.id,
+            subjectId: subj.id,
+            iaNumber: iaNum,
+            q1, q2, q3, q4,
+            sectionA, sectionB, total,
+            enteredByUserId: admin.id,
+          },
+        });
+      }
+      // IA3 not entered yet (simulate pending)
+    }
+  }
+
+  // ==================== VTU CIE SUMMARIES ====================
+  for (const sp of studentProfiles) {
+    for (const subj of cseSubjectsSem2) {
+      const vtuMarks = await prisma.vTUIAMark.findMany({
+        where: { studentProfileId: sp.id, subjectId: subj.id },
+        orderBy: { iaNumber: "asc" },
+      });
+
+      const iaTotals = [0, 0, 0];
+      for (const m of vtuMarks) {
+        if (m.iaNumber >= 1 && m.iaNumber <= 3) iaTotals[m.iaNumber - 1] = m.total;
+      }
+
+      const sorted = [...iaTotals].sort((a, b) => b - a);
+      const bestTwoTotal = sorted[0] + sorted[1];
+      const finalCIE = Math.min(bestTwoTotal, 50);
+
+      await prisma.vTUCIESummary.upsert({
+        where: { studentProfileId_subjectId: { studentProfileId: sp.id, subjectId: subj.id } },
         update: {},
-        create: { studentProfileId: sp.id, subjectId: subj.id, iaNumber: 1, marksObtained: marks, maxMarks: 30, enteredByUserId: admin.id },
+        create: {
+          studentProfileId: sp.id,
+          subjectId: subj.id,
+          ia1Total: iaTotals[0],
+          ia2Total: iaTotals[1],
+          ia3Total: iaTotals[2],
+          bestTwoTotal,
+          finalCIE,
+          isEligible: finalCIE >= 20,
+          finalized: false,
+        },
       });
     }
   }
 
+  // ==================== COUNSELLING ASSIGNMENTS (Placeholder) ====================
+  if (cseFacultyProfiles.length > 0) {
+    for (let i = 0; i < Math.min(studentProfiles.length, 5); i++) {
+      const facultyUser = await prisma.user.findUnique({
+        where: { usn: cseFacultyData[i % cseFacultyData.length].usn },
+      });
+      const studentUser = await prisma.user.findUnique({
+        where: { usn: realStudents[i]?.usn ?? demoStudents[i - realStudents.length]?.usn },
+      });
+      if (!facultyUser || !studentUser) continue;
+
+      await prisma.counsellorAssignment.upsert({
+        where: {
+          facultyUserId_studentUserId_academicYear: {
+            facultyUserId: facultyUser.id,
+            studentUserId: studentUser.id,
+            academicYear: "2025-2026",
+          },
+        },
+        update: {},
+        create: {
+          facultyUserId: facultyUser.id,
+          studentUserId: studentUser.id,
+          departmentId: cse.id,
+          academicYear: "2025-2026",
+          isActive: true,
+          assignedById: hodCse.id,
+        },
+      });
+    }
+  }
+
+  // ==================== NOTICES ====================
   const noticesData = [
-    { title: "IA2 Examination Schedule", content: "Internal Assessment 2 will be conducted from December 2-7, 2024. All students must carry their college ID cards.", targetRole: Role.STUDENT as Role | null },
-    { title: "Lab Manual Submission Deadline", content: "All lab manuals for semester 5 must be submitted by November 30, 2024. Late submissions will not be accepted.", targetRole: Role.STUDENT as Role | null },
-    { title: "Parent-Teacher Meeting", content: "PTM for semester 5 students will be held on December 15, 2024 at 10:00 AM in the main auditorium.", targetRole: Role.PARENT as Role | null },
-    { title: "Faculty Meeting - Research Proposals", content: "All faculty members must submit their research proposals for the upcoming semester by December 1, 2024.", targetRole: Role.FACULTY as Role | null },
-    { title: "Holiday Notice", content: "College will remain closed on November 14 (Second Saturday) and November 15 (Sunday) for general holidays.", targetRole: null },
+    { title: "IA2 Examination Schedule", content: "Internal Assessment 2 will be conducted from June 2-7, 2025. All students must carry their college ID cards.", targetRole: Role.STUDENT as Role | null },
+    { title: "Attendance Shortage Notice", content: "Students with attendance below 75% must submit medical certificates to HOD on or before June 10, 2025.", targetRole: Role.STUDENT as Role | null },
+    { title: "Parent-Teacher Meeting", content: "PTM for semester 2 students will be held on June 15, 2025 at 10:00 AM in the main auditorium.", targetRole: Role.PARENT as Role | null },
+    { title: "Faculty Meeting - Curriculum Review", content: "All faculty members must attend the curriculum review meeting on June 5, 2025.", targetRole: Role.FACULTY as Role | null },
+    { title: "College Foundation Day", content: "VCET Foundation Day celebration on May 28, 2025. All students and staff must attend.", targetRole: null },
   ];
+
   for (const n of noticesData) {
     await prisma.notice.create({
-      data: { ...n, postedByUserId: admin.id, isActive: true, departmentId: dept.id },
+      data: { ...n, postedByUserId: admin.id, isActive: true, departmentId: cse.id },
     });
   }
 
+  // ==================== ACADEMIC CALENDAR ====================
   const calendarData = [
-    { title: "IA1 Results Declaration", description: "IA1 results will be declared on the student portal", startDate: new Date("2024-11-20"), endDate: new Date("2024-11-20"), type: "exam" },
-    { title: "CIA Test", description: "Course Outcome Assessment test for all semesters", startDate: new Date("2024-11-25"), endDate: new Date("2024-11-27"), type: "exam" },
-    { title: "Semester End Practical Exams", description: "Practical examinations for all courses", startDate: new Date("2024-12-10"), endDate: new Date("2024-12-20"), type: "exam" },
-    { title: "Semester Break", description: "Winter semester break for all students", startDate: new Date("2024-12-21"), endDate: new Date("2025-01-05"), type: "holiday" },
+    { title: "IA2 Examinations", description: "Internal Assessment 2 for all semesters", startDate: new Date("2025-06-02"), endDate: new Date("2025-06-07"), type: "exam" },
+    { title: "Semester End Practical Exams", description: "Practical examinations for all courses", startDate: new Date("2025-06-16"), endDate: new Date("2025-06-25"), type: "exam" },
+    { title: "Semester Break", description: "Summer semester break", startDate: new Date("2025-06-26"), endDate: new Date("2025-07-15"), type: "holiday" },
   ];
+
   for (const c of calendarData) {
     await prisma.academicCalendar.create({ data: c });
   }
 
   console.log("Seeding complete.");
+  console.log(`  Departments: CSE, AIML, ECE, MECH`);
+  console.log(`  Subjects: ${createdSubjects.length}`);
+  console.log(`  Students: ${studentProfiles.length}`);
+  console.log(`  Login: 4VP24CS038 / vcet@123`);
 }
 
 main()

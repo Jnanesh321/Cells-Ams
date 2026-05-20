@@ -12,6 +12,11 @@ const refreshSchema = z.object({
   refreshToken: z.string().min(1),
 });
 
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(6),
+});
+
 export class AuthController {
   static async login(req: Request, res: Response) {
     const { usn, password } = loginSchema.parse(req.body);
@@ -45,6 +50,12 @@ export class AuthController {
           }
         : null,
     });
+  }
+
+  static async changePassword(req: Request, res: Response) {
+    const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+    await AuthService.changePassword(req.user!.id, currentPassword, newPassword);
+    res.status(200).json({ success: true });
   }
 
   private static async resolveParentProfile(req: Request) {

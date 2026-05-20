@@ -8,6 +8,9 @@ import {
 } from 'react-native';
 import API from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
+import { useAppTheme } from '../../hooks/useAppTheme';
+import { useAcademicDay } from '../../hooks/useAcademicDay';
+import { getStudentBirthday } from '../../mock/birthdays';
 import Card from '../../components/Card';
 import Loader from '../../components/Loader';
 
@@ -68,6 +71,8 @@ function colorForAttendance(percentage: number): string {
 
 const DashboardScreen = () => {
   const { user } = useAuthStore();
+  const { colors } = useAppTheme();
+  const { academicDay } = useAcademicDay();
   const [attendance, setAttendance] = useState<AttendanceSummaryItem[]>([]);
   const [marks, setMarks] = useState<MarksItem[]>([]);
   const [notices, setNotices] = useState<NoticeItem[]>([]);
@@ -150,6 +155,15 @@ const DashboardScreen = () => {
     void fetchDashboardData().finally(() => setRefreshing(false));
   }, [fetchDashboardData]);
 
+  const isBirthday = useMemo(() => {
+    if (!user?.usn) return false;
+    const bday = getStudentBirthday(user.usn);
+    if (!bday) return false;
+    const today = new Date();
+    const mmdd = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    return bday.date === mmdd;
+  }, [user?.usn]);
+
   const overallAttendance = useMemo(() => {
     if (attendance.length === 0) return 0;
     return attendance.reduce((sum, item) => sum + item.percentage, 0) / attendance.length;
@@ -163,41 +177,85 @@ const DashboardScreen = () => {
 
   return (
     <ScrollView
-      className="flex-1 bg-slate-950"
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#38bdf8" />}
+      className="flex-1"
+      style={{ backgroundColor: colors.bg }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.refreshControl} />}
       contentContainerStyle={{ padding: 16, paddingBottom: 28 }}
     >
       <View className="mb-4">
-        <Text className="text-slate-400 text-xs uppercase tracking-[0.2em]">Student Dashboard</Text>
-        <Text className="text-white text-2xl font-bold mt-1">Welcome, {user?.name ?? 'Student'}</Text>
-        <Text className="text-slate-300 text-sm mt-1">USN {user?.usn ?? 'N/A'}</Text>
+        <Text className="text-xs uppercase tracking-[0.2em]" style={{ color: colors.textMuted }}>Student Dashboard</Text>
+        <Text className="text-2xl font-bold mt-1" style={{ color: colors.text }}>Welcome, {user?.name ?? 'Student'}</Text>
+        <Text className="text-sm mt-1" style={{ color: colors.textSecondary }}>USN {user?.usn ?? 'N/A'}</Text>
       </View>
 
+      {isBirthday && (
+        <View className="bg-gradient-to-r from-pink-700 to-rose-700 rounded-xl px-4 py-4 mb-4">
+          <View className="flex-row items-center gap-3">
+            <Text className="text-3xl">🎂</Text>
+            <View className="flex-1">
+              <Text className="text-white text-lg font-bold">Happy Birthday, {user?.name}! 🎉</Text>
+              <Text className="text-pink-100 text-sm mt-0.5">Wishing you a fantastic day ahead!</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {academicDay && (
+        <View className="rounded-xl px-4 py-3 mb-4" style={{ backgroundColor: '#1E1B4B', borderColor: '#3730A380', borderWidth: 1 }}>
+          <View className="flex-row items-center justify-between">
+            <View className="flex-1">
+              <Text className="text-indigo-200 text-xs uppercase tracking-wider">
+                {academicDay.termLabel}
+              </Text>
+              <Text className="text-white text-lg font-bold mt-0.5">
+                Day {academicDay.dayNumber} of {academicDay.totalDays}
+              </Text>
+              {academicDay.eventName ? (
+                <Text className="text-amber-300 text-xs mt-1">
+                  {academicDay.isHoliday ? '🎉 ' : ''}{academicDay.eventName}
+                </Text>
+              ) : null}
+            </View>
+            <View className="items-end">
+              <Text className="text-indigo-300 text-sm font-semibold">
+                Week {academicDay.weekNumber}
+              </Text>
+              <View className="h-1.5 w-20 rounded-full mt-1 overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
+                <View
+                  className="h-full rounded-full bg-indigo-500"
+                  style={{ width: `${Math.min(academicDay.progress * 100, 100)}%` }}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
+
       <View className="flex-row gap-3 mb-4">
-        <Card className="flex-1 bg-slate-900 border-slate-800">
-          <Text className="text-slate-400 text-xs uppercase tracking-wider">Overall Attendance</Text>
+        <Card className="flex-1">
+          <Text className="text-xs uppercase tracking-wider" style={{ color: colors.textMuted }}>Overall Attendance</Text>
           <Text
             className="text-3xl font-bold mt-2"
             style={{ color: colorForAttendance(overallAttendance) }}
           >
             {overallAttendance.toFixed(1)}%
           </Text>
-          <Text className="text-slate-500 text-xs mt-2">
+          <Text className="text-xs mt-2" style={{ color: colors.textMuted }}>
             {overallAttendance < 75 ? 'Needs attention' : overallAttendance < 85 ? 'On track' : 'Good standing'}
           </Text>
         </Card>
 
-        <Card className="flex-1 bg-slate-900 border-slate-800">
-          <Text className="text-slate-400 text-xs uppercase tracking-wider">Average IA Marks</Text>
+        <Card className="flex-1">
+          <Text className="text-xs uppercase tracking-wider" style={{ color: colors.textMuted }}>Average IA Marks</Text>
           <Text className="text-3xl font-bold mt-2 text-cyan-400">
             {averageIaMarks.toFixed(1)}
           </Text>
-          <Text className="text-slate-500 text-xs mt-2">Across available IA entries</Text>
+          <Text className="text-xs mt-2" style={{ color: colors.textMuted }}>Across available IA entries</Text>
         </Card>
       </View>
 
-      <Card className="bg-slate-900 border-slate-800 mb-4">
-        <Text className="text-white text-lg font-bold mb-3">Notices</Text>
+      <Card className="mb-4">
+        <Text className="font-bold text-lg mb-3" style={{ color: colors.text }}>Notices</Text>
         {notices.length > 0 ? (
           <FlatList
             data={notices}
@@ -205,28 +263,28 @@ const DashboardScreen = () => {
             keyExtractor={(item, index) => String(item.id ?? `${item.title}-${index}`)}
             ItemSeparatorComponent={() => <View className="h-3" />}
             renderItem={({ item }) => (
-              <View className="rounded-xl bg-slate-800 border border-slate-700 p-3">
+              <View className="rounded-xl p-3" style={{ backgroundColor: colors.bgTertiary, borderColor: colors.border, borderWidth: 1 }}>
                 <View className="flex-row items-start justify-between gap-3">
                   <View className="flex-1">
-                    <Text className="text-white font-semibold">{item.title}</Text>
+                    <Text className="font-semibold" style={{ color: colors.text }}>{item.title}</Text>
                     {item.content ? (
-                      <Text className="text-slate-300 text-sm mt-1">{item.content}</Text>
+                      <Text className="text-sm mt-1" style={{ color: colors.textSecondary }}>{item.content}</Text>
                     ) : null}
                   </View>
                   {item.createdAt ? (
-                    <Text className="text-slate-500 text-[11px] text-right">{new Date(item.createdAt).toLocaleDateString()}</Text>
+                    <Text className="text-[11px] text-right" style={{ color: colors.textMuted }}>{new Date(item.createdAt).toLocaleDateString()}</Text>
                   ) : null}
                 </View>
               </View>
             )}
           />
         ) : (
-          <Text className="text-slate-400">No notices available.</Text>
+          <Text style={{ color: colors.textMuted }}>No notices available.</Text>
         )}
       </Card>
 
-      <Card className="bg-slate-900 border-slate-800">
-        <Text className="text-white text-lg font-bold mb-3">Upcoming Calendar Events</Text>
+      <Card>
+        <Text className="font-bold text-lg mb-3" style={{ color: colors.text }}>Upcoming Calendar Events</Text>
         {calendarEvents.length > 0 ? (
           <FlatList
             data={calendarEvents}
@@ -234,19 +292,19 @@ const DashboardScreen = () => {
             keyExtractor={(item, index) => String(item.id ?? `${item.title}-${index}`)}
             ItemSeparatorComponent={() => <View className="h-3" />}
             renderItem={({ item }) => (
-              <View className="rounded-xl bg-slate-800 border border-slate-700 p-3">
+              <View className="rounded-xl p-3" style={{ backgroundColor: colors.bgTertiary, borderColor: colors.border, borderWidth: 1 }}>
                 <View className="flex-row items-start justify-between gap-3">
                   <View className="flex-1">
-                    <Text className="text-white font-semibold">{item.title}</Text>
+                    <Text className="font-semibold" style={{ color: colors.text }}>{item.title}</Text>
                     {item.description ? (
-                      <Text className="text-slate-300 text-sm mt-1">{item.description}</Text>
+                      <Text className="text-sm mt-1" style={{ color: colors.textSecondary }}>{item.description}</Text>
                     ) : null}
-                    <Text className="text-slate-500 text-xs mt-2 uppercase tracking-wider">
+                    <Text className="text-xs mt-2 uppercase tracking-wider" style={{ color: colors.textMuted }}>
                       {item.type ?? 'event'}
                     </Text>
                   </View>
                   {item.startDate ? (
-                    <Text className="text-cyan-300 text-[11px] text-right">
+                    <Text className="text-[11px] text-right text-cyan-300">
                       {new Date(item.startDate).toLocaleDateString()}
                     </Text>
                   ) : null}
@@ -255,7 +313,7 @@ const DashboardScreen = () => {
             )}
           />
         ) : (
-          <Text className="text-slate-400">No upcoming events.</Text>
+          <Text style={{ color: colors.textMuted }}>No upcoming events.</Text>
         )}
       </Card>
     </ScrollView>

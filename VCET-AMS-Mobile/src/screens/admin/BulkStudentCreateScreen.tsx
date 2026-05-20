@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, FlatList, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import { getAllDepartments, getDepartmentName, DepartmentCode } from '../../constants/departments';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
@@ -31,6 +32,7 @@ function generateUSN(department: string, year: number, index: number): string {
 
 export default function BulkStudentCreateScreen() {
   const navigation = useNavigation<any>();
+  const { colors } = useAppTheme();
   const departments = useMemo(() => getAllDepartments(), []);
   const [selectedDept, setSelectedDept] = useState('CSE');
   const [selectedSection, setSelectedSection] = useState('A');
@@ -77,7 +79,7 @@ export default function BulkStudentCreateScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-slate-950">
+    <ScrollView className="flex-1" style={{ backgroundColor: colors.bg }}>
       <View className="p-4 pb-8">
         <View className="flex-row items-center justify-between mb-4">
           <View>

@@ -9,6 +9,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import API from '../../services/api';
 import { useAuthStore } from '../../store/auth';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import Card from '../../components/Card';
 import Loader from '../../components/Loader';
 
@@ -33,6 +34,7 @@ function barWidth(attendance: number) {
 const DashboardScreen = () => {
   const navigation = useNavigation<any>();
   const { user } = useAuthStore();
+  const { colors } = useAppTheme();
   const [rows, setRows] = useState<CollegeAnalyticsRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -97,25 +99,25 @@ const DashboardScreen = () => {
   }
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1" style={{ backgroundColor: colors.bg }}>
       <View className="px-4 pt-4 pb-2">
-        <Text className="text-slate-400 text-xs uppercase tracking-[0.2em]">Principal Dashboard</Text>
-        <Text className="text-white text-2xl font-bold mt-1">{user?.name ?? 'Principal'}</Text>
-        <Text className="text-slate-300 text-sm mt-1">College analytics overview</Text>
+        <Text className="text-xs uppercase tracking-[0.2em]" style={{ color: colors.textMuted }}>Principal Dashboard</Text>
+        <Text className="text-2xl font-bold mt-1" style={{ color: colors.text }}>{user?.name ?? 'Principal'}</Text>
+        <Text className="text-sm mt-1" style={{ color: colors.textSecondary }}>College analytics overview</Text>
       </View>
 
       <View className="px-4 mb-2 flex-row gap-3">
-        <Card className="flex-1 bg-slate-900 border-slate-800">
-          <Text className="text-slate-400 text-xs uppercase tracking-wider">Departments</Text>
-          <Text className="text-white text-3xl font-bold mt-2">{rows.length}</Text>
+        <Card className="flex-1">
+          <Text className="text-xs uppercase tracking-wider" style={{ color: colors.textMuted }}>Departments</Text>
+          <Text className="text-3xl font-bold mt-2" style={{ color: colors.text }}>{rows.length}</Text>
         </Card>
-        <Card className="flex-1 bg-slate-900 border-slate-800">
-          <Text className="text-slate-400 text-xs uppercase tracking-wider">Students</Text>
-          <Text className="text-cyan-300 text-3xl font-bold mt-2">{summary.studentCount}</Text>
+        <Card className="flex-1">
+          <Text className="text-xs uppercase tracking-wider" style={{ color: colors.textMuted }}>Students</Text>
+          <Text className="text-3xl font-bold mt-2 text-cyan-300">{summary.studentCount}</Text>
         </Card>
-        <Card className="flex-1 bg-slate-900 border-slate-800">
-          <Text className="text-slate-400 text-xs uppercase tracking-wider">Avg Attendance</Text>
-          <Text className="text-emerald-300 text-3xl font-bold mt-2">{summary.avgAttendance.toFixed(1)}%</Text>
+        <Card className="flex-1">
+          <Text className="text-xs uppercase tracking-wider" style={{ color: colors.textMuted }}>Avg Attendance</Text>
+          <Text className="text-3xl font-bold mt-2 text-emerald-300">{summary.avgAttendance.toFixed(1)}%</Text>
         </Card>
       </View>
 
@@ -123,27 +125,27 @@ const DashboardScreen = () => {
         data={rows}
         keyExtractor={(item) => item.deptCode}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fbbf24" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accentPrincipal} />}
         ItemSeparatorComponent={() => <View className="h-3" />}
         renderItem={({ item }) => {
           const color = attendanceColor(item.avgAttendance);
 
           return (
             <Pressable onPress={() => navigation.navigate('DeptDetailScreen', { deptId: item.deptCode })}>
-              <Card className="bg-slate-900 border-slate-800">
+              <Card>
                 <View className="flex-row items-start justify-between gap-3">
                   <View className="flex-1">
-                    <Text className="text-white text-lg font-bold">{item.deptName}</Text>
-                    <Text className="text-slate-400 text-xs uppercase tracking-wider mt-1">
+                    <Text className="text-lg font-bold" style={{ color: colors.text }}>{item.deptName}</Text>
+                    <Text className="text-xs uppercase tracking-wider mt-1" style={{ color: colors.textMuted }}>
                       {item.deptCode}
                     </Text>
-                    <Text className="text-slate-300 text-sm mt-3">
+                    <Text className="text-sm mt-3" style={{ color: colors.textSecondary }}>
                       {item.studentCount} students
                     </Text>
                   </View>
 
                   <View className="items-end">
-                    <View className="rounded-full bg-cyan-500/10 border border-cyan-500/30 px-3 py-1">
+                    <View className="rounded-full px-3 py-1" style={{ backgroundColor: '#155E75', borderColor: '#06B6D4', borderWidth: 1 }}>
                       <Text className="text-cyan-200 text-xs font-semibold">IA Avg {item.avgIA.toFixed(1)}</Text>
                     </View>
                   </View>
@@ -151,10 +153,10 @@ const DashboardScreen = () => {
 
                 <View className="mt-4">
                   <View className="flex-row justify-between mb-2">
-                    <Text className="text-slate-400 text-xs">Attendance</Text>
-                    <Text className="text-slate-300 text-xs font-semibold">{item.avgAttendance.toFixed(1)}%</Text>
+                    <Text className="text-xs" style={{ color: colors.textMuted }}>Attendance</Text>
+                    <Text className="text-xs font-semibold" style={{ color: colors.textSecondary }}>{item.avgAttendance.toFixed(1)}%</Text>
                   </View>
-                  <View className="h-3 rounded-full bg-slate-800 overflow-hidden">
+                  <View className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
                     <View
                       className="h-full rounded-full"
                       style={{ width: barWidth(item.avgAttendance), backgroundColor: color }}
@@ -166,8 +168,8 @@ const DashboardScreen = () => {
           );
         }}
         ListEmptyComponent={
-          <Card className="bg-slate-900 border-slate-800">
-            <Text className="text-slate-400">No analytics available.</Text>
+          <Card>
+            <Text style={{ color: colors.textMuted }}>No analytics available.</Text>
           </Card>
         }
       />

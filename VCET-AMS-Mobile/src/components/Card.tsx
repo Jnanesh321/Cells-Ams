@@ -1,15 +1,29 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, ViewStyle } from 'react-native';
+import { useAppTheme } from '../hooks/useAppTheme';
 
 interface CardProps {
   children: React.ReactNode;
   className?: string;
+  style?: ViewStyle;
 }
 
-const Card: React.FC<CardProps> = ({ children, className = '' }) => {
+const Card: React.FC<CardProps> = ({ children, className = '', style }) => {
+  const { colors } = useAppTheme();
+
   return (
     <View
-      className={`bg-slate-800 rounded-lg shadow-md p-4 my-2 border border-slate-700 ${className}`}
+      className={`rounded-lg shadow-md p-4 my-2 ${className}`}
+      style={[{
+        backgroundColor: colors.bgCard,
+        borderColor: colors.border,
+        borderWidth: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 2,
+      }, style]}
     >
       {children}
     </View>

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, Text, View, RefreshControl, TouchableOpacity, Alert } from 'react-native';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import Card from '../../components/Card';
 import Loader from '../../components/Loader';
 
@@ -12,6 +13,7 @@ type Notice = {
 };
 
 export default function PrincipalNoticesScreen() {
+  const { colors } = useAppTheme();
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -43,11 +45,11 @@ export default function PrincipalNoticesScreen() {
   if (loading) return <Loader />;
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1" style={{ backgroundColor: colors.bg }}>
       <View className="p-4 pb-2 flex-row items-center justify-between">
         <View>
-          <Text className="text-slate-400 text-xs uppercase tracking-widest">Notices</Text>
-          <Text className="text-white text-2xl font-bold mt-1">All Notices</Text>
+          <Text className="text-xs uppercase tracking-widest" style={{ color: colors.textMuted }}>Notices</Text>
+          <Text className="text-2xl font-bold mt-1" style={{ color: colors.text }}>All Notices</Text>
         </View>
         <TouchableOpacity onPress={handlePost} className="bg-amber-600 px-4 py-2 rounded-lg">
           <Text className="text-white text-xs font-bold">+ Post</Text>
@@ -59,19 +61,19 @@ export default function PrincipalNoticesScreen() {
         keyExtractor={(item) => String(item.id)}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#f59e0b" />}
         renderItem={({ item }) => (
-          <Card className="bg-slate-900 border-slate-800 mb-3">
+          <Card className="mb-3" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
             <View className="flex-row items-start justify-between">
               <View className="flex-1">
                 <View className="flex-row items-center gap-2 mb-1">
-                  <Text className="text-white font-bold text-base">{item.title}</Text>
+                  <Text className="font-bold text-base" style={{ color: colors.text }}>{item.title}</Text>
                   {item.targetRole && (
-                    <View className="bg-amber-900/50 rounded px-2 py-0.5">
+                    <View className="rounded px-2 py-0.5" style={{ backgroundColor: 'rgba(217,119,6,0.5)' }}>
                       <Text className="text-amber-300 text-[9px] uppercase tracking-wider">{item.targetRole}</Text>
                     </View>
                   )}
                 </View>
-                <Text className="text-slate-300 text-sm leading-5 mt-1">{item.content}</Text>
-                <Text className="text-slate-500 text-xs mt-2">
+                <Text className="text-sm leading-5 mt-1" style={{ color: colors.textSecondary }}>{item.content}</Text>
+                <Text className="text-xs mt-2" style={{ color: colors.textMuted }}>
                   {new Date(item.createdAt).toLocaleDateString('en-IN', {
                     day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
                   })}
@@ -81,8 +83,8 @@ export default function PrincipalNoticesScreen() {
           </Card>
         )}
         ListEmptyComponent={
-          <Card className="bg-slate-900 border-slate-800">
-            <Text className="text-slate-400 text-sm text-center">No notices posted yet</Text>
+          <Card style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+            <Text className="text-sm text-center" style={{ color: colors.textMuted }}>No notices posted yet</Text>
           </Card>
         }
       />

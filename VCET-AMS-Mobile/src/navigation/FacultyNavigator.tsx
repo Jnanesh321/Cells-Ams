@@ -1,8 +1,9 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '../hooks/useAppTheme';
 import FacultyDashboardScreen from '../screens/FacultyDashboardScreen';
 import SubjectPickerScreen from '../screens/SubjectPickerScreen';
 import AttendanceSessionScreen from '../screens/AttendanceSessionScreen';
@@ -10,32 +11,18 @@ import EditAttendanceScreen from '../screens/EditAttendanceScreen';
 import ReviewSubmitScreen from '../screens/ReviewSubmitScreen';
 import SuccessConfirmationScreen from '../screens/SuccessConfirmationScreen';
 import MarksSubjectPickerScreen from '../screens/faculty/MarksSubjectPickerScreen';
-import IAMarksEntryScreen from '../screens/faculty/IAMarksEntryScreen';
-import { useAuthStore } from '../store/auth';
-import Button from '../components/Button';
+import VTUIAMarksEntryScreen from '../screens/faculty/VTUIAMarksEntryScreen';
+import FacultyNotesScreen from '../screens/faculty/NotesScreen';
+import FacultyProfileScreen from '../screens/faculty/FacultyProfileScreen';
+import FacultyTimetableScreen from '../screens/faculty/TimetableScreen';
+import CounsellingDashboardScreen from '../screens/faculty/CounsellingDashboardScreen';
+import CounsellingStudentDetailScreen from '../screens/faculty/CounsellingStudentDetailScreen';
+import CounsellingSessionFormScreen from '../screens/faculty/CounsellingSessionFormScreen';
 
 const DashboardStack = createStackNavigator();
 const MarksStack = createStackNavigator();
+const CounsellingStack = createStackNavigator();
 const Tab = createBottomTabNavigator();
-
-const SubjectsScreen = () => (
-  <View className="flex-1 bg-slate-900 justify-center items-center">
-    <Text className="text-white text-lg">Subjects & Sections</Text>
-    <Text className="text-slate-400 text-sm mt-2">Coming Soon</Text>
-  </View>
-);
-
-const ProfileScreen = () => {
-  const { user, logout } = useAuthStore();
-  return (
-    <View className="flex-1 bg-slate-900 p-4 justify-center items-center">
-      <Text className="text-white text-2xl font-bold mb-4">{user?.name}</Text>
-      <Text className="text-slate-400 mb-2">{user?.email}</Text>
-      <Text className="text-slate-400 mb-8 text-sm">{user?.department} • {user?.designation}</Text>
-      <Button title="Logout" onPress={logout} className="bg-red-600 w-full" />
-    </View>
-  );
-};
 
 const DashboardStackNavigator = () => (
   <DashboardStack.Navigator screenOptions={{ headerShown: false }}>
@@ -51,19 +38,31 @@ const DashboardStackNavigator = () => (
 const MarksStackNavigator = () => (
   <MarksStack.Navigator screenOptions={{ headerShown: false }}>
     <MarksStack.Screen name="MarksSubjectPicker" component={MarksSubjectPickerScreen} />
-    <MarksStack.Screen name="IAMarksEntry" component={IAMarksEntryScreen} />
+    <MarksStack.Screen name="VTUIAMarksEntry" component={VTUIAMarksEntryScreen} />
   </MarksStack.Navigator>
 );
 
+const CounsellingStackNavigator = () => (
+  <CounsellingStack.Navigator screenOptions={{ headerShown: false }}>
+    <CounsellingStack.Screen name="CounsellingDashboard" component={CounsellingDashboardScreen} />
+    <CounsellingStack.Screen name="CounsellingStudentDetail" component={CounsellingStudentDetailScreen} />
+    <CounsellingStack.Screen name="CounsellingSessionForm" component={CounsellingSessionFormScreen} />
+  </CounsellingStack.Navigator>
+);
+
 const FacultyNavigator = () => {
+  const { colors } = useAppTheme();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
             DashboardTab: focused ? 'grid' : 'grid-outline',
-            Subjects: focused ? 'book' : 'book-outline',
+            Timetable: focused ? 'time' : 'time-outline',
+            Notes: focused ? 'document-text' : 'document-text-outline',
             Marks: focused ? 'bar-chart' : 'bar-chart-outline',
+            Counselling: focused ? 'chatbubbles' : 'chatbubbles-outline',
             Profile: focused ? 'person' : 'person-outline',
           };
           return (
@@ -74,11 +73,11 @@ const FacultyNavigator = () => {
             />
           );
         },
-        tabBarActiveTintColor: '#6366F1',
-        tabBarInactiveTintColor: '#475569',
+        tabBarActiveTintColor: colors.accentFaculty,
+        tabBarInactiveTintColor: colors.tabBarInactive,
         tabBarStyle: {
-          backgroundColor: '#0F172A',
-          borderTopColor: '#1E293B',
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
           paddingBottom: 4,
           height: 60,
@@ -92,9 +91,9 @@ const FacultyNavigator = () => {
         options={{ title: 'Dashboard', tabBarLabel: 'Dashboard' }}
       />
       <Tab.Screen
-        name="Subjects"
-        component={SubjectsScreen}
-        options={{ title: 'Subjects', tabBarLabel: 'Subjects' }}
+        name="Timetable"
+        component={FacultyTimetableScreen}
+        options={{ title: 'Timetable', tabBarLabel: 'Timetable' }}
       />
       <Tab.Screen
         name="Marks"
@@ -102,8 +101,18 @@ const FacultyNavigator = () => {
         options={{ title: 'Marks', tabBarLabel: 'Marks' }}
       />
       <Tab.Screen
+        name="Counselling"
+        component={CounsellingStackNavigator}
+        options={{ title: 'Counselling', tabBarLabel: 'Counselling' }}
+      />
+      <Tab.Screen
+        name="Notes"
+        component={FacultyNotesScreen}
+        options={{ title: 'Notes', tabBarLabel: 'Notes' }}
+      />
+      <Tab.Screen
         name="Profile"
-        component={ProfileScreen}
+        component={FacultyProfileScreen}
         options={{ title: 'Profile', tabBarLabel: 'Profile' }}
       />
     </Tab.Navigator>

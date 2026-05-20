@@ -5,6 +5,10 @@ import {
   getDeptMarksForHoD,
   getStudentMarks,
   upsertIAMarks,
+  upsertVTUIAMarks,
+  getStudentVTUIAMarks,
+  getStudentVTUCIESummary,
+  computeVTUCIESummary,
 } from "../services/marks.service";
 
 const iaSchema = z
@@ -79,6 +83,90 @@ export class MarksController {
     } catch (error: any) {
       const status = typeof error?.status === "number" ? error.status : 500;
       return fail(res, error?.message ?? "Failed to fetch department marks", status);
+    }
+  }
+
+  // =========== VTU IA ===========
+
+  static async upsertVTUIA(req: Request, res: Response) {
+    try {
+      const schema = z.object({
+        subjectId: z.coerce.number().int().positive(),
+        iaNumber: z.coerce.number().int().min(1).max(3),
+        entries: z.array(
+          z.object({
+            studentProfileId: z.coerce.number().int().positive(),
+            q1: z.coerce.number().min(0).max(25),
+            q2: z.coerce.number().min(0).max(25),
+            q3: z.coerce.number().min(0).max(25),
+            q4: z.coerce.number().min(0).max(25),
+          })
+        ),
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        return fail(res, "Validation failed", 400, parsed.error.flatten());
+      }
+      if (!req.user) return fail(res, "Unauthorized", 401);
+
+      const result = await upsertVTUIAMarks(
+        parsed.data.subjectId,
+        parsed.data.iaNumber,
+        parsed.data.entries,
+        req.user.id
+      );
+      return ok(res, result);
+    } catch (error: any) {
+      const status = typeof error?.status === "number" ? error.status : 500;
+      return fail(res, error?.message ?? "Failed to save VTU IA marks", status);
+    }
+  }
+
+  static async studentVTUIA(req: Request, res: Response) {
+    try {
+      const usn = String(req.params.usn ?? "").trim();
+      if (!usn) return fail(res, "USN is required", 400);
+
+      const result = await getStudentVTUIAMarks(usn);
+      return ok(res, result);
+    } catch (error: any) {
+      const status = typeof error?.status === "number" ? error.status : 500;
+      return fail(res, error?.message ?? "Failed to fetch VTU IA marks", status);
+    }
+  }
+
+  static async studentVTUCIE(req: Request, res: Response) {
+    try {
+      const usn = String(req.params.usn ?? "").trim();
+      if (!usn) return fail(res, "USN is required", 400);
+
+      const result = await getStudentVTUCIESummary(usn);
+      return ok(res, result);
+    } catch (error: any) {
+      const status = typeof error?.status === "number" ? error.status : 500;
+      return fail(res, error?.message ?? "Failed to fetch VTU CIE summary", status);
+    }
+  }
+
+  static async computeVTUCIE(req: Request, res: Response) {
+    try {
+      const schema = z.object({
+        studentProfileId: z.coerce.number().int().positive(),
+        subjectId: z.coerce.number().int().positive(),
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        return fail(res, "Validation failed", 400, parsed.error.flatten());
+      }
+
+      const result = await computeVTUCIESummary(
+        parsed.data.studentProfileId,
+        parsed.data.subjectId
+      );
+      return ok(res, result);
+    } catch (error: any) {
+      const status = typeof error?.status === "number" ? error.status : 500;
+      return fail(res, error?.message ?? "Failed to compute VTU CIE", status);
     }
   }
 }

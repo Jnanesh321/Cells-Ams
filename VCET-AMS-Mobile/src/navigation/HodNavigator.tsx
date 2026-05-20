@@ -1,29 +1,31 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, View } from 'react-native';
+import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '../hooks/useAppTheme';
 import HodDashboardScreen from '../screens/HodDashboardScreen';
 import HodAnalyticsScreen from '../screens/hod/AnalyticsScreen';
 import HodFacultyScreen from '../screens/hod/FacultyScreen';
 import HodReportsScreen from '../screens/hod/ReportsScreen';
-import { useAuthStore } from '../store/auth';
-import Button from '../components/Button';
+import HodProfileScreen from '../screens/hod/HodProfileScreen';
+import SubjectAssignmentScreen from '../screens/hod/SubjectAssignmentScreen';
+import HodCounsellingSummaryScreen from '../screens/hod/HodCounsellingSummaryScreen';
+import CounsellorAssignmentScreen from '../screens/hod/CounsellorAssignmentScreen';
+
+const CounsellingStack = createStackNavigator();
+
+const CounsellingStackNavigator = () => (
+  <CounsellingStack.Navigator screenOptions={{ headerShown: false }}>
+    <CounsellingStack.Screen name="HodCounsellingSummary" component={HodCounsellingSummaryScreen} />
+    <CounsellingStack.Screen name="CounsellorAssignment" component={CounsellorAssignmentScreen} />
+  </CounsellingStack.Navigator>
+);
 
 const Tab = createBottomTabNavigator();
 
-const ProfileScreen = () => {
-  const { user, logout } = useAuthStore();
-  return (
-    <View className="flex-1 bg-slate-900 p-4 justify-center items-center">
-      <Text className="text-white text-2xl font-bold mb-4">{user?.name}</Text>
-      <Text className="text-slate-400 mb-2">{user?.email}</Text>
-      <Text className="text-slate-400 mb-8 text-sm">HOD • {user?.department}</Text>
-      <Button title="Logout" onPress={logout} className="bg-red-600 w-full" />
-    </View>
-  );
-};
-
 const HodNavigator = () => {
+  const { colors } = useAppTheme();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -31,6 +33,8 @@ const HodNavigator = () => {
           const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
             Dashboard: focused ? 'grid' : 'grid-outline',
             Analytics: focused ? 'analytics' : 'analytics-outline',
+            Assignments: focused ? 'checkbox' : 'checkbox-outline',
+            Counselling: focused ? 'chatbubbles' : 'chatbubbles-outline',
             Faculty: focused ? 'people' : 'people-outline',
             Reports: focused ? 'document-text' : 'document-text-outline',
             Profile: focused ? 'person' : 'person-outline',
@@ -43,11 +47,11 @@ const HodNavigator = () => {
             />
           );
         },
-        tabBarActiveTintColor: '#6366F1',
-        tabBarInactiveTintColor: '#475569',
+        tabBarActiveTintColor: colors.accentHod,
+        tabBarInactiveTintColor: colors.tabBarInactive,
         tabBarStyle: {
-          backgroundColor: '#0F172A',
-          borderTopColor: '#1E293B',
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
           paddingBottom: 4,
           height: 60,
@@ -56,10 +60,12 @@ const HodNavigator = () => {
       })}
     >
       <Tab.Screen name="Dashboard" component={HodDashboardScreen} options={{ tabBarLabel: 'Dashboard' }} />
+      <Tab.Screen name="Counselling" component={CounsellingStackNavigator} options={{ tabBarLabel: 'Counselling' }} />
       <Tab.Screen name="Analytics" component={HodAnalyticsScreen} options={{ tabBarLabel: 'Analytics' }} />
+      <Tab.Screen name="Assignments" component={SubjectAssignmentScreen} options={{ tabBarLabel: 'Assignments' }} />
       <Tab.Screen name="Faculty" component={HodFacultyScreen} options={{ tabBarLabel: 'Faculty' }} />
       <Tab.Screen name="Reports" component={HodReportsScreen} options={{ tabBarLabel: 'Reports' }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Profile' }} />
+      <Tab.Screen name="Profile" component={HodProfileScreen} options={{ tabBarLabel: 'Profile' }} />
     </Tab.Navigator>
   );
 };

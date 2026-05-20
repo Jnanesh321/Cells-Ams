@@ -12,6 +12,7 @@ import { useAuthStore } from '../store/auth';
 import { getFacultySubjects, getStudentsForSubject } from '../mock/facultySubjects';
 import { getStudentAttendance, getStudentsForSubject as getDetainedStudents } from '../mock/studentAttendance';
 import { mockStudents } from '../mock';
+import { useAppTheme } from '../hooks/useAppTheme';
 import Card from '../components/Card';
 import Button from '../components/Button';
 
@@ -32,6 +33,7 @@ const SubjectPickerScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { user } = useAuthStore();
+  const { colors } = useAppTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubject, setSelectedSubject] = useState<FacultySubjectAssignment | null>(
     route.params?.selectedSubject || null
@@ -138,13 +140,13 @@ const SubjectPickerScreen = () => {
   const isFormValid = selectedSubject;
 
   return (
-    <View className="flex-1 bg-slate-900">
+    <View className="flex-1" style={{ backgroundColor: colors.bg }}>
       {/* Header */}
-      <View className="bg-slate-800 border-b border-slate-700 pt-4 pb-3">
+      <View className="border-b pt-4 pb-3" style={{ backgroundColor: colors.bgCard, borderBottomColor: colors.border }}>
         <TouchableOpacity onPress={() => navigation.goBack()} className="px-4">
           <Text className="text-blue-400 font-semibold">← Back</Text>
         </TouchableOpacity>
-        <Text className="text-white text-xl font-bold px-4 mt-2">Select Subject & Date</Text>
+        <Text className="text-xl font-bold px-4 mt-2" style={{ color: colors.text }}>Select Subject & Date</Text>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
@@ -153,21 +155,22 @@ const SubjectPickerScreen = () => {
           <View className="mb-4">
             <TextInput
               placeholder="Search subjects..."
-              placeholderTextColor="#94a3b8"
+              placeholderTextColor={colors.placeholder}
               value={searchQuery}
               onChangeText={setSearchQuery}
-              className="bg-slate-800 text-white border border-slate-700 rounded-lg px-4 py-3"
+              className="rounded-lg px-4 py-3"
+              style={{ backgroundColor: colors.bgInput, color: colors.text, borderColor: colors.border, borderWidth: 1 }}
             />
           </View>
 
           {/* Subjects List */}
-          <Text className="text-slate-300 text-xs font-bold uppercase tracking-wider mb-3">
+          <Text className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: colors.textSecondary }}>
             Your Subjects ({facultySubjects.length})
           </Text>
 
           {filteredSubjects.length === 0 ? (
-            <Card className="bg-slate-800 border border-slate-700 py-8">
-              <Text className="text-slate-400 text-center">
+            <Card className="py-8" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+              <Text className="text-center" style={{ color: colors.textMuted }}>
                 {facultySubjects.length === 0 ? 'No subjects assigned' : 'No matching subjects'}
               </Text>
             </Card>
@@ -186,19 +189,18 @@ const SubjectPickerScreen = () => {
                   activeOpacity={0.7}
                 >
                   <Card
-                    className={`border mb-3 ${
-                      isSelected
-                        ? 'bg-blue-900 border-blue-600'
-                        : 'bg-slate-800 border-slate-700'
-                    }`}
+                    className="border mb-3"
+                    style={{
+                      backgroundColor: isSelected ? '#1e3a5f' : colors.bgCard,
+                      borderColor: isSelected ? '#3b82f6' : colors.border,
+                    }}
                   >
                     <View className="flex-row justify-between items-start">
                       <View className="flex-1">
                         <View className="flex-row items-center gap-2 mb-1">
                           <Text
-                            className={`text-base font-bold ${
-                              isSelected ? 'text-blue-200' : 'text-white'
-                            }`}
+                            className="text-base font-bold"
+                            style={{ color: isSelected ? '#93c5fd' : colors.text }}
                           >
                             {subject.subject}
                           </Text>
@@ -211,22 +213,19 @@ const SubjectPickerScreen = () => {
                           )}
                         </View>
                         <Text
-                          className={`text-sm ${
-                            isSelected ? 'text-blue-300' : 'text-slate-400'
-                          }`}
+                          className="text-sm"
+                          style={{ color: isSelected ? '#93c5fd' : colors.textMuted }}
                         >
                           {subject.subjectCode} • Sec {subject.section} • Sem {subject.semester}
                         </Text>
                         <View className="flex-row gap-2 mt-2">
                           <View
-                            className={`rounded px-2 py-1 ${
-                              isSelected ? 'bg-blue-800' : 'bg-slate-700'
-                            }`}
+                            className="rounded px-2 py-1"
+                            style={{ backgroundColor: isSelected ? '#1e3a8a' : colors.borderLight }}
                           >
                             <Text
-                              className={`text-xs ${
-                                isSelected ? 'text-blue-100' : 'text-slate-300'
-                              }`}
+                              className="text-xs"
+                              style={{ color: isSelected ? '#dbeafe' : colors.textSecondary }}
                             >
                               📚 {subject.enrollmentCount} Students
                             </Text>
@@ -245,7 +244,7 @@ const SubjectPickerScreen = () => {
                             {subject.lastUpdated ? '✓' : '◯'}
                           </Text>
                         </View>
-                        <Text className="text-xs text-slate-400 mt-1">
+                        <Text className="text-xs mt-1" style={{ color: colors.textMuted }}>
                           {getStatusText(subject.lastUpdated)}
                         </Text>
                       </View>
@@ -259,56 +258,58 @@ const SubjectPickerScreen = () => {
           {/* Divider */}
           {selectedSubject && (
             <>
-              <View className="bg-slate-700 h-px my-6" />
+              <View className="h-px my-6" style={{ backgroundColor: colors.border }} />
 
               {/* Subject Summary */}
-              <Card className="bg-blue-900/20 border border-blue-700 mb-6">
+              <Card className="border border-blue-700 mb-6" style={{ backgroundColor: '#1e3a5f' }}>
                 <Text className="text-blue-300 text-sm mb-2">Selected Subject</Text>
-                <Text className="text-white font-bold text-lg mb-1">
+                <Text className="font-bold text-lg mb-1" style={{ color: colors.text }}>
                   {selectedSubject.subject}
                 </Text>
                 <View className="flex-row gap-3 mt-2">
                   <View className="flex-1">
-                    <Text className="text-slate-400 text-xs">Code</Text>
-                    <Text className="text-white font-semibold">{selectedSubject.subjectCode}</Text>
+                    <Text className="text-xs" style={{ color: colors.textMuted }}>Code</Text>
+                    <Text className="font-semibold" style={{ color: colors.text }}>{selectedSubject.subjectCode}</Text>
                   </View>
                   <View className="flex-1">
-                    <Text className="text-slate-400 text-xs">Students</Text>
-                    <Text className="text-white font-semibold">
+                    <Text className="text-xs" style={{ color: colors.textMuted }}>Students</Text>
+                    <Text className="font-semibold" style={{ color: colors.text }}>
                       {getStudentCount()}
                     </Text>
                   </View>
                   <View className="flex-1">
-                    <Text className="text-slate-400 text-xs">Detained</Text>
+                    <Text className="text-xs" style={{ color: colors.textMuted }}>Detained</Text>
                     <Text className="text-red-400 font-semibold">{getDetentionCount()}</Text>
                   </View>
                 </View>
               </Card>
 
               {/* Date & Time Selection */}
-              <Text className="text-slate-300 text-xs font-bold uppercase tracking-wider mb-3">
+              <Text className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: colors.textSecondary }}>
                 Date & Time
               </Text>
 
-              <Card className="bg-slate-800 border border-slate-700 mb-6">
+              <Card className="mb-6" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
                 <View className="mb-3">
-                  <Text className="text-slate-400 text-sm mb-2">Date</Text>
+                  <Text className="text-sm mb-2" style={{ color: colors.textMuted }}>Date</Text>
                   <TextInput
                     placeholder="YYYY-MM-DD"
-                    placeholderTextColor="#94a3b8"
+                    placeholderTextColor={colors.placeholder}
                     value={selectedDate}
                     onChangeText={setSelectedDate}
-                    className="bg-slate-700 text-white border border-slate-600 rounded-lg px-3 py-2"
+                    className="rounded-lg px-3 py-2"
+                    style={{ backgroundColor: colors.bgTertiary, color: colors.text, borderColor: colors.borderLight, borderWidth: 1 }}
                   />
                 </View>
                 <View>
-                  <Text className="text-slate-400 text-sm mb-2">Time</Text>
+                  <Text className="text-sm mb-2" style={{ color: colors.textMuted }}>Time</Text>
                   <TextInput
                     placeholder="HH:MM"
-                    placeholderTextColor="#94a3b8"
+                    placeholderTextColor={colors.placeholder}
                     value={selectedTime}
                     onChangeText={setSelectedTime}
-                    className="bg-slate-700 text-white border border-slate-600 rounded-lg px-3 py-2"
+                    className="rounded-lg px-3 py-2"
+                    style={{ backgroundColor: colors.bgTertiary, color: colors.text, borderColor: colors.borderLight, borderWidth: 1 }}
                   />
                 </View>
               </Card>
@@ -317,9 +318,7 @@ const SubjectPickerScreen = () => {
               <Button
                 title={`Start Attendance (${getStudentCount()} students)`}
                 onPress={handleProceedToAttendance}
-                className={`${
-                  isFormValid ? 'bg-green-600' : 'bg-slate-700 opacity-50'
-                } mb-6`}
+                className="mb-6"
                 disabled={!isFormValid}
               />
             </>

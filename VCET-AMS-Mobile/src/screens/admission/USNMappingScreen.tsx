@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAdmissionStore } from '../../store/admissionStore';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import { previewUSNMapping, mapRollToUSN } from '../../mock/admission';
 import Card from '../../components/Card';
 import Loader from '../../components/Loader';
 
 export default function USNMappingScreen() {
+  const { colors } = useAppTheme();
   const { batches, loadBatches, bulkMapUSN, loadStats } = useAdmissionStore();
   const [unmapped, setUnmapped] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,11 +66,11 @@ export default function USNMappingScreen() {
   if (loading) return <Loader />;
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1" style={{ backgroundColor: colors.bg }}>
       <View className="p-4 pb-2">
-        <Text className="text-slate-400 text-xs uppercase tracking-widest mb-1">Admission Cell</Text>
-        <Text className="text-white text-2xl font-bold">USN Mapping</Text>
-        <Text className="text-slate-400 text-sm mt-1">{pendingCount} students pending mapping</Text>
+        <Text className="text-xs uppercase tracking-widest mb-1" style={{ color: colors.textMuted }}>Admission Cell</Text>
+        <Text className="text-2xl font-bold" style={{ color: colors.text }}>USN Mapping</Text>
+        <Text className="text-sm mt-1" style={{ color: colors.textMuted }}>{pendingCount} students pending mapping</Text>
       </View>
 
       <View className="flex-row px-4 gap-2 mb-4">
@@ -91,25 +93,26 @@ export default function USNMappingScreen() {
         renderItem={({ item }) => {
           const isMapped = !!item.mappedUSN;
           return (
-            <Card className={`bg-slate-900 border mb-2 ${isMapped ? 'border-green-800' : 'border-slate-800'}`}>
+            <Card className="border mb-2" style={{ backgroundColor: colors.bgCard, borderColor: isMapped ? '#166534' : colors.border }}>
               <View className="flex-row items-center justify-between mb-2">
                 <View className="flex-1">
-                  <Text className="text-white font-medium text-sm">{item.name}</Text>
-                  <Text className="text-slate-400 text-xs">{item.rollNo} • {item.department} • {item.admissionType}</Text>
+                  <Text className="font-medium text-sm" style={{ color: colors.text }}>{item.name}</Text>
+                  <Text className="text-xs" style={{ color: colors.textMuted }}>{item.rollNo} • {item.department} • {item.admissionType}</Text>
                 </View>
                 {isMapped && (
-                  <View className="bg-green-900/50 rounded px-2 py-0.5">
+                  <View className="rounded px-2 py-0.5" style={{ backgroundColor: 'rgba(22,163,74,0.5)' }}>
                     <Text className="text-green-300 text-[10px] font-medium">MAPPED</Text>
                   </View>
                 )}
               </View>
               <View className="flex-row items-center gap-2">
-                <View className="bg-slate-800 rounded-lg px-2 py-1">
+                <View className="rounded-lg px-2 py-1" style={{ backgroundColor: colors.bgTertiary }}>
                   <Text className="text-orange-300 text-xs font-mono">{item.rollNo}</Text>
                 </View>
-                <Text className="text-slate-500">→</Text>
+                <Text style={{ color: colors.textMuted }}>→</Text>
                 <TextInput
-                  className={`flex-1 bg-slate-800 rounded-lg px-3 py-2 text-sm font-mono border ${isMapped ? 'border-green-700 text-green-300' : 'border-slate-700 text-white'}`}
+                  className="flex-1 rounded-lg px-3 py-2 text-sm font-mono"
+                  style={{ backgroundColor: colors.bgTertiary, color: isMapped ? '#86efac' : colors.text, borderColor: isMapped ? '#166534' : colors.border, borderWidth: 1 }}
                   value={mappings[item.id] ?? ''}
                   onChangeText={(v) => setMappings((prev) => ({ ...prev, [item.id]: v.toUpperCase() }))}
                   editable={!isMapped}
@@ -117,7 +120,7 @@ export default function USNMappingScreen() {
                 />
               </View>
               {!isMapped && (
-                <Text className="text-slate-500 text-[10px] mt-1">
+                <Text className="text-[10px] mt-1" style={{ color: colors.textMuted }}>
                   Expected: {mapRollToUSN(item.rollNo)}
                 </Text>
               )}
@@ -125,8 +128,8 @@ export default function USNMappingScreen() {
           );
         }}
         ListEmptyComponent={
-          <Card className="bg-slate-900 border-slate-800">
-            <Text className="text-slate-400 text-sm text-center">All students have been mapped</Text>
+          <Card style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+            <Text className="text-sm text-center" style={{ color: colors.textMuted }}>All students have been mapped</Text>
           </Card>
         }
       />

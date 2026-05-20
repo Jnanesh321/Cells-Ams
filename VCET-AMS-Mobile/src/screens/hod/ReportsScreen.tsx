@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, Modal, ScrollView, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
 import { useAuthStore } from '../../store/auth';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import { mockStudents } from '../../mock';
 import { getStudentsForSubject } from '../../mock/studentAttendance';
 import { getFacultySubjects } from '../../mock/facultySubjects';
@@ -78,6 +79,7 @@ const MOCK_PARENT_LETTER = {
 
 export default function HodReportsScreen() {
   const { user } = useAuthStore();
+  const { colors } = useAppTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [generating, setGenerating] = useState<string | null>(null);
   const [selectedReport, setSelectedReport] = useState<ReportType | null>(null);
@@ -139,21 +141,22 @@ export default function HodReportsScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-slate-950"
+      className="flex-1"
+      style={{ backgroundColor: colors.bg }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#a855f7" />}
     >
       <View className="p-4">
-        <Text className="text-slate-400 text-xs uppercase tracking-widest mb-1">{dept} Department</Text>
-        <Text className="text-white text-2xl font-bold mb-4">Reports</Text>
+        <Text className="text-xs uppercase tracking-widest mb-1" style={{ color: colors.textMuted }}>{dept} Department</Text>
+        <Text className="text-2xl font-bold mb-4" style={{ color: colors.text }}>Reports</Text>
 
-        <Card className="bg-gradient-to-r from-purple-700 to-purple-900 border-0 mb-4">
+        <Card className="border-0 mb-4">
           <Text className="text-white font-bold text-lg mb-1">Department Summary</Text>
           <Text className="text-purple-200 text-sm">
             {deptStudents.length} Students • {MOCK_CLASS_DATA.students.filter(s => s.overallPercentage < 75).length} At Risk
           </Text>
         </Card>
 
-        <Text className="text-white font-bold text-base mb-3">Generate Reports</Text>
+        <Text className="font-bold text-base mb-3" style={{ color: colors.text }}>Generate Reports</Text>
         {REPORT_CONFIG.map((report) => {
           const isGenerating = generating === report.id;
           return (
@@ -163,17 +166,17 @@ export default function HodReportsScreen() {
               disabled={generating !== null}
               activeOpacity={0.7}
             >
-              <Card className={`bg-slate-900 border-slate-800 mb-3 ${isGenerating ? 'opacity-60' : ''}`}>
+              <Card className={`mb-3 ${isGenerating ? 'opacity-60' : ''}`} style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
                 <View className="flex-row items-center">
                   <View className={`w-12 h-12 ${report.color} rounded-xl items-center justify-center mr-3`}>
                     <Text className="text-white text-xl">{report.icon}</Text>
                   </View>
                   <View className="flex-1">
                     <View className="flex-row items-center gap-2">
-                      <Text className="text-white font-bold text-base">{report.label}</Text>
+                      <Text className="font-bold text-base" style={{ color: colors.text }}>{report.label}</Text>
                       {isGenerating && <Loader />}
                     </View>
-                    <Text className="text-slate-400 text-xs mt-0.5">{report.desc}</Text>
+                    <Text className="text-xs mt-0.5" style={{ color: colors.textMuted }}>{report.desc}</Text>
                   </View>
                   <Text className="text-purple-400 text-lg">{isGenerating ? '...' : '>'}</Text>
                 </View>
@@ -182,7 +185,7 @@ export default function HodReportsScreen() {
           );
         })}
 
-        <Card className="bg-amber-900/30 border border-amber-800/60 mb-4">
+        <Card className="mb-4" style={{ backgroundColor: 'rgba(217,119,6,0.3)', borderColor: 'rgba(217,119,6,0.6)', borderWidth: 1 }}>
           <Text className="text-amber-300 font-semibold text-sm">⚠️ VTU 2022 Scheme</Text>
           <Text className="text-amber-200 text-xs mt-1 leading-5">
             Reports follow VTU regulations: Attendance ≥ 75% required. IA calculated as best-of-2 average.
@@ -190,24 +193,24 @@ export default function HodReportsScreen() {
           </Text>
         </Card>
 
-        <Card className="bg-slate-900 border-slate-800">
-          <Text className="text-white font-bold text-lg mb-3">Recent Reports</Text>
+        <Card style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+          <Text className="font-bold text-lg mb-3" style={{ color: colors.text }}>Recent Reports</Text>
           {generating ? (
-            <Text className="text-slate-400 text-sm">Generating report...</Text>
+            <Text className="text-sm" style={{ color: colors.textMuted }}>Generating report...</Text>
           ) : (
             [
               { name: `${dept} Attendance - May 2026`, date: '2 days ago' },
               { name: `IA1 Marks Summary - Sem 5`, date: '1 week ago' },
               { name: `Detention List - Odd Sem`, date: '2 weeks ago' },
             ].map((item, i) => (
-              <View key={i} className="flex-row justify-between items-center py-3 border-b border-slate-800 last:border-0">
+              <View key={i} className="flex-row justify-between items-center py-3 border-b last:border-0" style={{ borderBottomColor: colors.border }}>
                 <View className="flex-1">
-                  <Text className="text-white text-sm font-medium">{item.name}</Text>
-                  <Text className="text-slate-500 text-xs">Generated {item.date}</Text>
+                  <Text className="text-sm font-medium" style={{ color: colors.text }}>{item.name}</Text>
+                  <Text className="text-xs" style={{ color: colors.textMuted }}>Generated {item.date}</Text>
                 </View>
                 <TouchableOpacity
                   onPress={() => Alert.alert('View', `${item.name}\n\nPDF preview coming soon.`)}
-                  className="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700"
+                  className="px-3 py-1.5 rounded-lg border" style={{ backgroundColor: colors.bgTertiary, borderColor: colors.border }}
                 >
                   <Text className="text-purple-400 text-xs font-medium">View</Text>
                 </TouchableOpacity>

@@ -9,34 +9,45 @@
 | `src/screens/admin/CreateUserScreen.tsx` | 3-step wizard modal (Step 1: single/bulk mode; Step 2A: role-dependent form; Step 2B: bulk preview; Step 3: success card with password copy). Step type = string `'1'|'2'|'2b'|'3'`. HOD conflict warning, parent password suggestion, strength indicator, DOB range for bulk. |
 | `src/screens/admin/UsersScreen.tsx` | Reads from `useAdminStore`, opens `CreateUserScreen` modal, edit modal preserved |
 
-## 🔴 High Priority
+## ✅ Done (Session: Academic Day Calculator)
 
-### Feature 3 — Academic Day Calculator
-- [ ] `src/mock/academicCalendar.ts` — term start/end dates, holidays, events
-- [ ] `src/utils/academicDayUtils.ts` — pure function `getAcademicDayInfo(date)` → `{ dayNumber, isHoliday, eventName?, weekNumber, progress }`
-- [ ] `src/hooks/useAcademicDay.ts` — React hook wrapping util with daily refresh
-- [ ] Update `StudentDashboardScreen` — show "Day 47 of 120" banner
-- [ ] Update `HodDashboardScreen` — show academic day info
+| File | What |
+|------|------|
+| `src/types/index.ts` | Added `AcademicDayInfo` type |
+| `src/mock/academicCalendar.ts` | Two terms (Odd/Even 2025-26), holidays, events, exams |
+| `src/utils/academicDayUtils.ts` | `getAcademicDayInfo(date)` — counts working days, holidays, week number, progress |
+| `src/hooks/useAcademicDay.ts` | React hook with midnight-auto-refresh |
+| `src/screens/student/DashboardScreen.tsx` | "Day 47 of 100" banner with progress bar & event display |
+| `src/screens/HodDashboardScreen.tsx` | Academic day info in header card + progress bar |
 
-### Feature 2 — Birthday Visibility System
-- [ ] Update `BirthdayBanner` component to read DOB from adminStore + mockStudents
-- [ ] Update `StudentDashboardScreen` — birthday greeting if today matches
-- [ ] Update `StudentProfileScreen` (or create one) — show DOB
-- [ ] Update `HodDashboardScreen` — today's birthdays banner
+## ✅ Done (Session: Birthday Visibility System)
 
-### Feature 4 — Notes/PDF Sharing (Faculty → Students)
-- [ ] `src/store/notesStore.ts` — Zustand store with notes array, CRUD, file metadata
-- [ ] Faculty `NotesScreen.tsx` — upload PDF (DocumentPicker), title, subject selector
-- [ ] Student `NotesScreen.tsx` — browse/download notes by subject
-- [ ] Add Notes tab to `FacultyNavigator.tsx`
-- [ ] Add Notes tab to `StudentNavigator.tsx`
-- [ ] Parent role must never see Notes tab
+| File | What |
+|------|------|
+| `src/mock/students.ts` | Added `dateOfBirth` (YYYY-MM-DD) to all 50+ student records (3 on May 18 for testing) |
+| `src/mock/birthdays.ts` | Rewritten to dynamically derive from `mockStudents.dateOfBirth`; added `getStudentBirthday(usn)` |
+| `src/components/BirthdayBanner.tsx` | Accepts optional `department` prop for filtering |
+| `src/screens/student/DashboardScreen.tsx` | Birthday greeting banner when today matches logged-in student |
+| `src/screens/student/StudentProfileScreen.tsx` | Created — shows DOB, academic info, personal info, logout |
+| `src/navigation/StudentNavigator.tsx` | Replaced inline ProfileScreen with proper `StudentProfileScreen` |
+| `src/screens/HodDashboardScreen.tsx` | Department-filtered `BirthdayBanner` in header |
+
+## ✅ Done (Session: Notes/PDF Sharing)
+
+| File | What |
+|------|------|
+| `src/types/index.ts` | Added `Note` and `NotesStoreState` types |
+| `src/store/notesStore.ts` | Zustand store with persist, CRUD, filter methods, 6 mock notes |
+| `src/screens/faculty/NotesScreen.tsx` | List + upload modal with title, subject picker (from assigned subjects), delete |
+| `src/screens/student/NotesScreen.tsx` | Browse by subject folder, drill into individual notes list |
+| `src/navigation/FacultyNavigator.tsx` | Added Notes tab (between Subjects & Marks) |
+| `src/navigation/StudentNavigator.tsx` | Added Notes tab (between Attendance & Marks) |
 
 ## 🟠 Medium Priority
 
-- [ ] **Profile screens** — one per role showing user info, logout, edit capability
-- [ ] **Fix 16 pre-existing TS errors** — `AttendanceSessionScreen`, `hod/AnalyticsScreen`, `ReviewSubmitScreen`, `authStore.ts`
-- [ ] **Populate `src/hooks/`** — `useAcademicDay`, `useNetworkStatus`, `useRoleGuard`
+- [x] **Profile screens** — one per role showing user info, logout, edit capability → All 7 roles (Student, Faculty, HOD, Principal, Admin, Admission, Parent) have dedicated profile screens
+- [x] **Fix 16 pre-existing TS errors** — `AttendanceSessionScreen`, `hod/AnalyticsScreen`, `ReviewSubmitScreen`, `authStore.ts` → **0 errors remaining**
+- [x] **Populate `src/hooks/`** — `useAcademicDay`, `useNetworkStatus`, `useRoleGuard` → all 3 created
 
 ## 🟢 Low Priority / Polish
 

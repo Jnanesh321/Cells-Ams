@@ -9,6 +9,9 @@ import './global.css';
 import AppNavigator from './src/navigation/AppNavigator';
 import { navigationRef } from './src/navigation/navigationRef';
 import { rehydrateAuth } from './src/store/authStore';
+import { useSettingsStore } from './src/store/settingsStore';
+import { useSubjectAssignmentStore } from './src/store/subjectAssignmentStore';
+import { useAppTheme } from './src/hooks/useAppTheme';
 import Loader from './src/components/Loader';
 import OfflineBanner from './src/components/OfflineBanner';
 import { queryClient } from './src/services/queryClient';
@@ -37,6 +40,7 @@ class NavErrorBoundary extends Component<{ children: React.ReactNode }, { error:
 const REHYDRATION_TIMEOUT = 5000;
 
 export default function App() {
+  const { colors, isDark } = useAppTheme();
   const [ready, setReady] = useState(false);
   const [rehydrateError, setRehydrateError] = useState(false);
   const mounted = useRef(true);
@@ -52,6 +56,8 @@ export default function App() {
     void (async () => {
       try {
         await rehydrateAuth();
+        useSettingsStore.getState().initializeIfNeeded();
+        useSubjectAssignmentStore.getState().initializeIfNeeded();
       } catch {
         if (mounted.current) {
           setRehydrateError(true);
@@ -71,20 +77,22 @@ export default function App() {
 
   if (!ready) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-900">
-        <Loader />
-      </SafeAreaView>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaView className="flex-1" style={{ backgroundColor: isDark ? '#0F172A' : '#FFFFFF' }}>
+          <Loader />
+        </SafeAreaView>
+      </GestureHandlerRootView>
     );
   }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
-        <SafeAreaView className="flex-1 bg-slate-950">
+        <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }}>
           <OfflineBanner />
           <NavErrorBoundary>
             <NavigationContainer ref={navigationRef}>
-              <StatusBar style="auto" />
+              <StatusBar style={isDark ? 'light' : 'dark'} />
               <AppNavigator />
             </NavigationContainer>
           </NavErrorBoundary>

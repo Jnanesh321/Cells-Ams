@@ -253,3 +253,27 @@ export const generateFacultySubjectsByDepartment = (department: string): Faculty
   const subjects = Object.values(mockFacultySubjects);
   return subjects.flat().filter((s) => s.name);
 };
+
+// ==================== FACULTY MEMBER LIST (for HOD subject assignment picker) ====================
+export interface FacultyMember {
+  id: string;
+  name: string;
+  department: string;
+  designation: string;
+  email: string;
+  phone: string;
+}
+
+export const mockFacultyMembers: FacultyMember[] = [
+  { id: 'FAC_CSE01', name: 'Prof. Suresh Kumar',   department: 'CSE',  designation: 'Assistant Professor', email: 'suresh@vcet.edu.in',   phone: '9876543201' },
+  { id: 'FAC_CSE02', name: 'Prof. Anita Rao',       department: 'CSE',  designation: 'Assistant Professor', email: 'anita@vcet.edu.in',    phone: '9876543202' },
+  { id: 'FAC_CSE03', name: 'Dr. Ramesh Bhat',       department: 'CSE',  designation: 'Associate Professor', email: 'ramesh@vcet.edu.in',   phone: '9876543203' },
+  { id: 'FAC_ECE01', name: 'Prof. Deepa Nair',      department: 'ECE',  designation: 'Assistant Professor', email: 'deepa@vcet.edu.in',    phone: '9876543204' },
+  { id: 'FAC_ECE02', name: 'Prof. Kiran Patil',     department: 'ECE',  designation: 'Assistant Professor', email: 'kiran@vcet.edu.in',    phone: '9876543205' },
+  { id: 'FAC_MECH01', name: 'Dr. Vijay Gowda',      department: 'MECH', designation: 'Associate Professor', email: 'vijay@vcet.edu.in',    phone: '9876543206' },
+  { id: 'FAC_MECH02', name: 'Prof. Meera Hegde',    department: 'MECH', designation: 'Assistant Professor', email: 'meera@vcet.edu.in',    phone: '9876543207' },
+];
+
+export function getFacultyByDept(department: string): FacultyMember[] {
+  return mockFacultyMembers.filter((f) => f.department === department);
+}

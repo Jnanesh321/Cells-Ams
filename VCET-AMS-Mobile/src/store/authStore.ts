@@ -84,12 +84,12 @@ async function secureStoreSet(key: string, value: string): Promise<void> {
     await SecureStore.setItemAsync(key, value);
     console.log('[SS] set OK via SecureStore:', key);
   } catch (ssErr) {
-    console.log('[SS] SecureStore failed, fallback to AsyncStorage:', ssErr?.message);
+    console.log('[SS] SecureStore failed, fallback to AsyncStorage:', (ssErr as Error)?.message);
     try {
       await AsyncStorage.setItem(FALLBACK_PREFIX + key, value);
       console.log('[SS] set OK via AsyncStorage fallback:', key);
     } catch (asErr) {
-      console.log('[SS] AsyncStorage fallback ALSO failed:', asErr?.message);
+      console.log('[SS] AsyncStorage fallback ALSO failed:', (asErr as Error)?.message);
     }
   }
 }
@@ -100,12 +100,12 @@ async function secureStoreDelete(key: string): Promise<void> {
     await SecureStore.deleteItemAsync(key);
     console.log('[SS] delete OK via SecureStore:', key);
   } catch (ssErr) {
-    console.log('[SS] SecureStore delete failed, fallback to AsyncStorage:', ssErr?.message);
+    console.log('[SS] SecureStore delete failed, fallback to AsyncStorage:', (ssErr as Error)?.message);
     try {
       await AsyncStorage.removeItem(FALLBACK_PREFIX + key);
       console.log('[SS] delete OK via AsyncStorage:', key);
     } catch (asErr) {
-      console.log('[SS] AsyncStorage delete ALSO failed:', asErr?.message);
+      console.log('[SS] AsyncStorage delete ALSO failed:', (asErr as Error)?.message);
     }
   }
 }
@@ -171,15 +171,28 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
   ...emptySnapshot,
   isAuthenticated: false,
 
-  setAuth: (userData: any) => {
+  setAuth: async (userData: any) => {
     console.log('[STORE] setAuth called, role:', userData.role);
     set({ user: userData, isAuthenticated: true });
     console.log('[STORE] zustand set() done');
-    persistAuthSnapshot({
+    await persistAuthSnapshot({
       token: userData.token ?? null,
       refreshToken: userData.refreshToken ?? null,
-      user: userData,
-    }).catch(console.log);
+      user: {
+        id: userData.usn ?? userData.id ?? '',
+        usn: userData.usn ?? '',
+        name: userData.name ?? '',
+        role: userData.role,
+        departmentId: userData.departmentId ?? null,
+        section: userData.section ?? null,
+        department: userData.department,
+        designation: userData.designation,
+        email: userData.email,
+        phone: userData.phone,
+        wardUsn: userData.wardUsn,
+      },
+    });
+    console.log('[STORE] setAuth done');
   },
 
   clearAuth: async () => {

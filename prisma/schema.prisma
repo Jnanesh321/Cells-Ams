@@ -23,6 +23,12 @@ enum AttendanceStatus {
   OD
 }
 
+enum CounsellingStatus {
+  DUE
+  COMPLETED
+  OVERDUE
+}
+
 model Department {
   id        Int       @id @default(autoincrement())
   name      String
@@ -32,7 +38,8 @@ model Department {
   users     User[]
   subjects  Subject[]
   notices   Notice[]
-  dayOverrides DayOverride[]
+  dayOverrides     DayOverride[]
+  counsellorAssignments CounsellorAssignment[]
 
   @@map("departments")
 }
@@ -41,10 +48,14 @@ model User {
   id             Int       @id @default(autoincrement())
   usn            String    @unique
   name           String
-  email          String?   @unique
-  passwordHash   String
-  role           Role
-  isActive       Boolean   @default(true)
+  email                 String?   @unique
+  emailVerified         Boolean   @default(false)
+  emailVerificationToken String?
+  emailVerificationSentAt DateTime?
+  lastVerifiedAt        DateTime?
+  passwordHash          String
+  role                  Role
+  isActive              Boolean   @default(true)
   departmentId   Int?
   department     Department? @relation(fields: [departmentId], references: [id])
   createdAt      DateTime  @default(now())
@@ -63,6 +74,15 @@ model User {
   finalizedCIE      CIESummary[]       @relation("FinalizedCIE")
   exemptedDetentions DetentionRecord[]  @relation("ExemptedDetention")
   birthdayVisibility BirthdayVisibility?
+
+  // Counselling System
+  counsellorFacultyAssignments   CounsellorAssignment[] @relation("CounsellorFaculty")
+  counsellorStudentAssignments   CounsellorAssignment[] @relation("CounsellorStudent")
+  counsellorAssignmentsCreated   CounsellorAssignment[] @relation("CounsellorAssignedBy")
+
+  // VTU IA System
+  enteredVTUIAMarks              VTUIAMark[]            @relation("EnteredVTUIAMarks")
+  vtuFinalizedCIE                VTUCIESummary[]        @relation("VTUFinalizedCIE")
 
   @@map("users")
 }
@@ -92,6 +112,8 @@ model StudentProfile {
   assignmentMarks      AssignmentMark[]
   cieSummaries         CIESummary[]
   detentionRecords     DetentionRecord[]
+  vtuIAMarks           VTUIAMark[]
+  vtuCIESummaries      VTUCIESummary[]
 
   @@map("student_profiles")
 }
@@ -138,6 +160,8 @@ model Subject {
   assignmentMarks  AssignmentMark[]
   cieSummaries     CIESummary[]
   timetableEntries TimetableEntry[]
+  vtuIAMarks       VTUIAMark[]
+  vtuCIESummaries  VTUCIESummary[]
 
   @@map("subjects")
 }
@@ -432,4 +456,117 @@ model BirthdayVisibility {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("birthday_visibility")
+}
+
+// ========= COUNSELLING SYSTEM =========
+
+model CounsellorAssignment {
+  id              Int      @id @default(autoincrement())
+  facultyUserId   Int
+  faculty         User     @relation("CounsellorFaculty", fields: [facultyUserId], references: [id])
+  studentUserId   Int
+  student         User     @relation("CounsellorStudent", fields: [studentUserId], references: [id])
+  departmentId    Int
+  department      Department @relation(fields: [departmentId], references: [id])
+  academicYear    String
+  isActive        Boolean  @default(true)
+  assignedById    Int
+  assignedBy      User     @relation("CounsellorAssignedBy", fields: [assignedById], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  sessions        CounsellingSession[]
+
+  @@unique([facultyUserId, studentUserId, academicYear])
+  @@index([facultyUserId, isActive])
+  @@index([studentUserId])
+  @@index([departmentId])
+  @@map("counsellor_assignments")
+}
+
+model CounsellingSession {
+  id                Int      @id @default(autoincrement())
+  studentUserId     Int
+  facultyUserId     Int
+  assignmentId      Int
+
+  // SECTION 1: Faculty Observation
+  observation       String   @db.Text
+
+  // SECTION 2: Student Current Status
+  studentStatus     String   @db.Text
+
+  // SECTION 3: Faculty Guidance
+  guidance          String   @db.Text
+
+  // SECTION 4: Follow-up
+  followUp          String   @db.Text
+  nextSessionDate   DateTime? @db.Date
+
+  status            CounsellingStatus @default(DUE)
+  sessionDate       DateTime @default(now()) @db.Date
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  assignment        CounsellorAssignment @relation(fields: [assignmentId], references: [id])
+
+  @@index([assignmentId])
+  @@index([studentUserId])
+  @@index([facultyUserId])
+  @@index([sessionDate])
+  @@map("counselling_sessions")
+}
+
+// ========= VTU IA SYSTEM =========
+
+model VTUIAMark {
+  id               Int      @id @default(autoincrement())
+  studentProfileId Int
+  subjectId        Int
+  iaNumber         Int           // 1, 2, or 3
+
+  q1               Float    @default(0)  // 0-25
+  q2               Float    @default(0)  // 0-25
+  q3               Float    @default(0)  // 0-25
+  q4               Float    @default(0)  // 0-25
+
+  sectionA         Float    @default(0)  // auto max(q1,q2)
+  sectionB         Float    @default(0)  // auto max(q3,q4)
+  total            Float    @default(0)  // auto sectionA+sectionB
+
+  enteredByUserId  Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  subject        Subject        @relation(fields: [subjectId], references: [id])
+  enteredBy      User           @relation("EnteredVTUIAMarks", fields: [enteredByUserId], references: [id])
+
+  @@unique([studentProfileId, subjectId, iaNumber])
+  @@index([studentProfileId])
+  @@map("vtu_ia_marks")
+}
+
+model VTUCIESummary {
+  id               Int      @id @default(autoincrement())
+  studentProfileId Int
+  subjectId        Int
+
+  ia1Total         Float    @default(0)  // total from VTUIAMark iaNumber=1
+  ia2Total         Float    @default(0)  // total from VTUIAMark iaNumber=2
+  ia3Total         Float    @default(0)  // total from VTUIAMark iaNumber=3
+
+  bestTwoTotal     Float    @default(0)  // sum of best 2
+  finalCIE         Float    @default(0)  // bestTwoTotal (max 50)
+  isEligible       Boolean  @default(true)
+  finalized        Boolean  @default(false)
+  finalizedByUserId Int?
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  subject        Subject        @relation(fields: [subjectId], references: [id])
+  finalizedBy    User?          @relation("VTUFinalizedCIE", fields: [finalizedByUserId], references: [id])
+
+  @@unique([studentProfileId, subjectId])
+  @@index([studentProfileId])
+  @@map("vtu_cie_summaries")
 }

@@ -2,8 +2,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../../store/auth';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import { getAttendanceSessionData, saveIAMarks } from '../../mock/backend';
 import Card from '../../components/Card';
+import { useSettingsStore } from '../../store/settingsStore';
 import { calculateCIE, VTU_RULES, getAttendanceWarningColor } from '../../utils/vtuRules';
 
 type Student = {
@@ -17,6 +19,8 @@ export default function IAMarksEntryScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const { user } = useAuthStore();
+  const { colors } = useAppTheme();
+  const iaMaxMarks = useSettingsStore((s) => s.settings.iaMaxMarks);
   const params = route.params ?? {};
   const subjectId = params.subjectId;
   const subjectName = params.subjectName ?? 'Subject';
@@ -24,9 +28,9 @@ export default function IAMarksEntryScreen() {
 
   if (!subjectId) {
     return (
-      <View className="flex-1 bg-slate-950 justify-center items-center p-4">
-        <Text className="text-slate-400 text-lg">Subject not specified</Text>
-        <Text className="text-slate-600 text-sm mt-2">Please select a subject first</Text>
+      <View className="flex-1 justify-center items-center p-4" style={{ backgroundColor: colors.bg }}>
+        <Text className="text-lg" style={{ color: colors.textMuted }}>Subject not specified</Text>
+        <Text className="text-sm mt-2" style={{ color: colors.textTertiary }}>Please select a subject first</Text>
       </View>
     );
   }
@@ -77,7 +81,7 @@ export default function IAMarksEntryScreen() {
   const setMark = useCallback((value: string) => {
     if (!current) return;
     const num = parseFloat(value);
-    if (value !== '' && (isNaN(num) || num < 0 || num > 30)) return;
+    if (value !== '' && (isNaN(num) || num < 0 || num > iaMaxMarks)) return;
     setMarks((prev) => ({ ...prev, [current.studentProfileId]: value }));
     setHasChanges(true);
   }, [current]);
@@ -90,14 +94,14 @@ export default function IAMarksEntryScreen() {
       }))
       .filter((e) => !isNaN(e.marksObtained));
 
-    if (entries.some((e) => e.marksObtained < 0 || e.marksObtained > 30)) {
-      Alert.alert('Validation', 'Marks must be between 0 and 30');
+    if (entries.some((e) => e.marksObtained < 0 || e.marksObtained > iaMaxMarks)) {
+      Alert.alert('Validation', `Marks must be between 0 and ${iaMaxMarks}`);
       return;
     }
 
     setSaving(true);
     try {
-      await saveIAMarks(subjectId, iaNumber, entries, 30);
+      await saveIAMarks(subjectId, iaNumber, entries, iaMaxMarks);
       Alert.alert('Saved', `IA${iaNumber} marks saved for ${entries.length} students`);
       setHasChanges(false);
     } catch (e: any) {
@@ -120,16 +124,16 @@ export default function IAMarksEntryScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-slate-950 justify-center items-center">
-        <Text className="text-slate-400">Loading students...</Text>
+      <View className="flex-1 justify-center items-center" style={{ backgroundColor: colors.bg }}>
+        <Text style={{ color: colors.textMuted }}>Loading students...</Text>
       </View>
     );
   }
 
   if (!current) {
     return (
-      <View className="flex-1 bg-slate-950 justify-center items-center">
-        <Text className="text-slate-400">No students found</Text>
+      <View className="flex-1 justify-center items-center" style={{ backgroundColor: colors.bg }}>
+        <Text style={{ color: colors.textMuted }}>No students found</Text>
       </View>
     );
   }
@@ -137,13 +141,13 @@ export default function IAMarksEntryScreen() {
   const markValue = marks[current.studentProfileId] ?? '';
 
   return (
-    <ScrollView className="flex-1 bg-slate-950" keyboardShouldPersistTaps="handled">
+    <ScrollView className="flex-1" style={{ backgroundColor: colors.bg }} keyboardShouldPersistTaps="handled">
       <View className="p-4">
         {/* Header */}
         <View className="mb-4">
-          <Text className="text-slate-400 text-xs uppercase tracking-widest">IA Marks Entry</Text>
-          <Text className="text-white text-lg font-bold mt-0.5">{subjectName}</Text>
-          <Text className="text-slate-400 text-sm">Section {section}</Text>
+          <Text className="text-xs uppercase tracking-widest" style={{ color: colors.textMuted }}>IA Marks Entry</Text>
+          <Text className="text-lg font-bold mt-0.5" style={{ color: colors.text }}>{subjectName}</Text>
+          <Text className="text-sm" style={{ color: colors.textMuted }}>Section {section}</Text>
         </View>
 
         {/* IA Picker */}
@@ -152,9 +156,10 @@ export default function IAMarksEntryScreen() {
             <TouchableOpacity
               key={n}
               onPress={() => { setIndex(0); setIANumber(n); }}
-              className={`flex-1 py-3 rounded-xl ${iaNumber === n ? 'bg-blue-600' : 'bg-slate-800 border border-slate-700'}`}
+              className="flex-1 py-3 rounded-xl"
+              style={{ backgroundColor: iaNumber === n ? '#3b82f6' : colors.bgCard, borderColor: iaNumber === n ? '#3b82f6' : colors.border, borderWidth: iaNumber === n ? 0 : 1 }}
             >
-              <Text className={`text-sm font-bold text-center ${iaNumber === n ? 'text-white' : 'text-slate-300'}`}>IA {n}</Text>
+              <Text className="text-sm font-bold text-center" style={{ color: iaNumber === n ? '#ffffff' : colors.textSecondary }}>IA {n}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -166,9 +171,10 @@ export default function IAMarksEntryScreen() {
               <TouchableOpacity
                 key={s.studentProfileId}
                 onPress={() => handleGoToStudent(i)}
-                className={`px-3 py-2 rounded-lg ${i === index ? 'bg-blue-600' : 'bg-slate-800 border border-slate-700'}`}
+                className="px-3 py-2 rounded-lg"
+                style={{ backgroundColor: i === index ? '#3b82f6' : colors.bgCard, borderColor: i === index ? '#3b82f6' : colors.border, borderWidth: i === index ? 0 : 1 }}
               >
-                <Text className={`text-xs font-mono ${i === index ? 'text-white' : i === index ? 'text-white' : 'text-slate-300'}`}>
+                <Text className="text-xs font-mono" style={{ color: i === index ? '#ffffff' : colors.textSecondary }}>
                   {s.usn.slice(-3)}
                 </Text>
               </TouchableOpacity>
@@ -177,7 +183,7 @@ export default function IAMarksEntryScreen() {
         </ScrollView>
 
         {/* Single Student Focus Card */}
-        <Card className="bg-slate-900 border-blue-800 border-2 mb-4">
+        <Card className="mb-4" style={{ backgroundColor: colors.bgCard, borderColor: '#1e40af', borderWidth: 2 }}>
           {/* Student Info */}
           <View className="items-center mb-6 pt-2">
             <View className="w-16 h-16 rounded-full bg-blue-600 items-center justify-center mb-3">
@@ -185,24 +191,25 @@ export default function IAMarksEntryScreen() {
                 {current.name.split(' ').map((s) => s[0]).join('').slice(0, 2)}
               </Text>
             </View>
-            <Text className="text-white text-xl font-bold text-center">{current.name}</Text>
-            <Text className="text-slate-400 text-sm font-mono mt-1">
+            <Text className="text-xl font-bold text-center" style={{ color: colors.text }}>{current.name}</Text>
+            <Text className="text-sm font-mono mt-1" style={{ color: colors.textMuted }}>
               {current.usn} • {index + 1} / {total}
             </Text>
           </View>
 
           {/* Progress Bar */}
-          <View className="bg-slate-800 h-2 rounded-full mb-6 overflow-hidden">
+          <View className="h-2 rounded-full mb-6 overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
             <View className="bg-blue-500 h-full rounded-full" style={{ width: `${((index + 1) / total) * 100}%` }} />
           </View>
 
           {/* Marks Input */}
           <View className="items-center mb-6">
-            <Text className="text-slate-400 text-sm mb-2">Enter Marks (max 30)</Text>
+            <Text className="text-sm mb-2" style={{ color: colors.textMuted }}>Enter Marks (max {iaMaxMarks})</Text>
             <View className="flex-row items-center gap-4">
               <TextInput
                 ref={inputRef}
-                className="bg-slate-800 rounded-2xl px-8 py-5 text-white text-5xl font-bold text-center border-2 border-blue-600 w-44"
+                className="rounded-2xl px-8 py-5 text-5xl font-bold text-center border-2 w-44"
+                style={{ backgroundColor: colors.bgTertiary, color: colors.text, borderColor: '#3b82f6' }}
                 value={markValue}
                 onChangeText={setMark}
                 keyboardType="decimal-pad"
@@ -211,33 +218,33 @@ export default function IAMarksEntryScreen() {
                 selectTextOnFocus
               />
             </View>
-            <Text className="text-slate-500 text-xs mt-2">/ 30 marks</Text>
+            <Text className="text-xs mt-2" style={{ color: colors.textTertiary }}>/ {iaMaxMarks} marks</Text>
           </View>
 
           {/* CIE Calculation */}
-          <View className="bg-slate-800 rounded-xl p-3 mb-4 border border-slate-700">
-            <Text className="text-slate-400 text-[10px] uppercase tracking-wider mb-2">VTU CIE Calculation</Text>
+          <View className="rounded-xl p-3 mb-4 border" style={{ backgroundColor: colors.bgTertiary, borderColor: colors.border }}>
+            <Text className="text-[10px] uppercase tracking-wider mb-2" style={{ color: colors.textMuted }}>VTU CIE Calculation</Text>
             <View className="flex-row gap-2">
               {[1, 2, 3].map((n) => {
                 const val = n === iaNumber ? (markValue ? parseFloat(markValue) : undefined) : undefined;
-                const color = val != null ? (val >= 20 ? '#10b981' : val >= 14 ? '#f59e0b' : '#ef4444') : '#334155';
+                const color = val != null ? (val >= 20 ? '#10b981' : val >= 14 ? '#f59e0b' : '#ef4444') : colors.textMuted;
                 return (
-                  <View key={n} className="flex-1 bg-slate-900 rounded-lg p-2 items-center border" style={{ borderColor: n === iaNumber ? '#3b82f6' : '#334155' }}>
-                    <Text className="text-slate-400 text-xs">IA{n}</Text>
+                  <View key={n} className="flex-1 rounded-lg p-2 items-center border" style={{ backgroundColor: colors.bgCard, borderColor: n === iaNumber ? '#3b82f6' : colors.border }}>
+                    <Text className="text-xs" style={{ color: colors.textMuted }}>IA{n}</Text>
                     <Text className="text-sm font-bold mt-0.5" style={{ color }}>{val != null ? val : '-'}</Text>
                   </View>
                 );
               })}
-              <View className="flex-1 bg-slate-900 rounded-lg p-2 items-center border border-slate-700">
-                <Text className="text-slate-400 text-xs">Asgn</Text>
+              <View className="flex-1 rounded-lg p-2 items-center border" style={{ backgroundColor: colors.bgCard, borderColor: colors.border }}>
+                <Text className="text-xs" style={{ color: colors.textMuted }}>Asgn</Text>
                 <Text className="text-sm font-bold mt-0.5 text-cyan-400">-</Text>
               </View>
             </View>
-            <View className="flex-row justify-between items-center mt-2 pt-2 border-t border-slate-700">
-              <Text className="text-xs text-slate-400">Expected CIE (best 2 IA + Asgn)</Text>
-              <Text className="text-sm font-bold text-white">
+            <View className="flex-row justify-between items-center mt-2 pt-2 border-t" style={{ borderTopColor: colors.border }}>
+              <Text className="text-xs" style={{ color: colors.textMuted }}>Expected CIE (best 2 IA + Asgn)</Text>
+              <Text className="text-sm font-bold" style={{ color: colors.text }}>
                 {markValue && !isNaN(parseFloat(markValue))
-                  ? `~${Math.min(parseFloat(markValue) + (current.existingMark ?? 0), 30)}/${VTU_RULES.CIE_TOTAL}`
+                  ? `~${Math.min(parseFloat(markValue) + (current.existingMark ?? 0), iaMaxMarks)}/${VTU_RULES.CIE_TOTAL}`
                   : 'Enter marks to calculate'}
               </Text>
             </View>
@@ -248,14 +255,16 @@ export default function IAMarksEntryScreen() {
             <TouchableOpacity
               onPress={goPrev}
               disabled={index === 0}
-              className={`flex-1 py-4 rounded-xl items-center ${index === 0 ? 'bg-slate-800 opacity-50' : 'bg-slate-800'}`}
+              className="flex-1 py-4 rounded-xl items-center"
+              style={{ backgroundColor: colors.bgTertiary, opacity: index === 0 ? 0.5 : 1 }}
             >
-              <Text className="text-slate-300 text-base font-semibold">◀ Previous</Text>
+              <Text className="text-base font-semibold" style={{ color: colors.textSecondary }}>◀ Previous</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={goNext}
               disabled={index >= total - 1}
-              className={`flex-1 py-4 rounded-xl items-center ${index >= total - 1 ? 'bg-slate-800 opacity-50' : 'bg-blue-600'}`}
+              className="flex-1 py-4 rounded-xl items-center"
+              style={{ backgroundColor: index >= total - 1 ? colors.bgTertiary : '#3b82f6', opacity: index >= total - 1 ? 0.5 : 1 }}
             >
               <Text className="text-white text-base font-semibold">Next ▶</Text>
             </TouchableOpacity>
@@ -263,22 +272,22 @@ export default function IAMarksEntryScreen() {
         </Card>
 
         {/* Quick Stats */}
-        <Card className="bg-slate-900 border-slate-800 mb-4">
+        <Card className="mb-4" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
           <View className="flex-row justify-between">
             <View className="items-center flex-1">
-              <Text className="text-slate-400 text-xs">Entered</Text>
-              <Text className="text-white text-lg font-bold">
+              <Text className="text-xs" style={{ color: colors.textMuted }}>Entered</Text>
+              <Text className="text-lg font-bold" style={{ color: colors.text }}>
                 {Object.keys(marks).filter((k) => marks[Number(k)] !== '').length}
               </Text>
             </View>
             <View className="items-center flex-1">
-              <Text className="text-slate-400 text-xs">Pending</Text>
+              <Text className="text-xs" style={{ color: colors.textMuted }}>Pending</Text>
               <Text className="text-yellow-400 text-lg font-bold">
                 {total - Object.keys(marks).filter((k) => marks[Number(k)] !== '').length}
               </Text>
             </View>
             <View className="items-center flex-1">
-              <Text className="text-slate-400 text-xs">IA</Text>
+              <Text className="text-xs" style={{ color: colors.textMuted }}>IA</Text>
               <Text className="text-blue-400 text-lg font-bold">{iaNumber}</Text>
             </View>
           </View>

@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAttendanceStore } from '../store/attendance';
+import { useAppTheme } from '../hooks/useAppTheme';
+import type { StudentAttendanceRecord } from '../types';
 import Card from '../components/Card';
 import Button from '../components/Button';
 
@@ -9,6 +11,7 @@ const ReviewSubmitScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { currentSession, submitSession } = useAttendanceStore();
+  const { colors } = useAppTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const session = route.params?.session || currentSession;
@@ -16,9 +19,9 @@ const ReviewSubmitScreen = () => {
   const stats = useMemo(() => {
     if (!session) return { present: 0, absent: 0, od: 0, total: 0 };
     return {
-      present: session.students.filter((s) => s.status === 'PRESENT').length,
-      absent: session.students.filter((s) => s.status === 'ABSENT').length,
-      od: session.students.filter((s) => s.status === 'OD').length,
+      present: session.students.filter((s: StudentAttendanceRecord) => s.status === 'PRESENT').length,
+      absent: session.students.filter((s: StudentAttendanceRecord) => s.status === 'ABSENT').length,
+      od: session.students.filter((s: StudentAttendanceRecord) => s.status === 'OD').length,
       total: session.students.length,
     };
   }, [session]);
@@ -32,8 +35,8 @@ const ReviewSubmitScreen = () => {
     if (!session) return [];
     // Students with attendance less than 75%
     return session.students
-      .filter((s) => s.status === 'ABSENT')
-      .slice(0, 5); // Show top 5
+      .filter((s: StudentAttendanceRecord) => s.status === 'ABSENT')
+      .slice(0, 5);
   }, [session]);
 
   const handleSubmit = async () => {
@@ -63,48 +66,48 @@ const ReviewSubmitScreen = () => {
 
   if (!session) {
     return (
-      <View className="flex-1 bg-slate-900 justify-center items-center">
-        <Text className="text-white">No session data</Text>
+      <View className="flex-1 justify-center items-center" style={{ backgroundColor: colors.bg }}>
+        <Text style={{ color: colors.text }}>No session data</Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-slate-900">
+    <View className="flex-1" style={{ backgroundColor: colors.bg }}>
       {/* Header */}
-      <View className="bg-slate-800 border-b border-slate-700 px-4 pt-4 pb-3">
+      <View className="px-4 pt-4 pb-3 border-b" style={{ backgroundColor: colors.bgCard, borderBottomColor: colors.border }}>
         <TouchableOpacity onPress={() => navigation.goBack()} className="mb-3">
           <Text className="text-blue-400 font-semibold">← Back</Text>
         </TouchableOpacity>
         <View>
-          <Text className="text-white text-lg font-bold">Review & Submit</Text>
-          <Text className="text-slate-400 text-sm mt-1">{session.subjectName}</Text>
+          <Text className="text-lg font-bold" style={{ color: colors.text }}>Review & Submit</Text>
+          <Text className="text-sm mt-1" style={{ color: colors.textMuted }}>{session.subjectName}</Text>
         </View>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="p-4">
           {/* Session Summary */}
-          <Card className="bg-slate-800 border border-slate-700 mb-4">
-            <Text className="text-slate-300 text-xs font-bold uppercase tracking-wider mb-3">
+          <Card className="mb-4" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+            <Text className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: colors.textSecondary }}>
               Session Details
             </Text>
-            <View className="bg-slate-700 rounded-lg p-3 space-y-2">
+            <View className="rounded-lg p-3" style={{ backgroundColor: colors.bgTertiary }}>
               <View className="flex-row justify-between">
-                <Text className="text-slate-400">Subject</Text>
-                <Text className="text-white font-semibold">{session.subjectName}</Text>
+                <Text className="text-sm" style={{ color: colors.textMuted }}>Subject</Text>
+                <Text className="font-semibold" style={{ color: colors.text }}>{session.subjectName}</Text>
               </View>
               <View className="flex-row justify-between">
-                <Text className="text-slate-400">Code</Text>
-                <Text className="text-white font-semibold">{session.subjectCode}</Text>
+                <Text className="text-sm" style={{ color: colors.textMuted }}>Code</Text>
+                <Text className="font-semibold" style={{ color: colors.text }}>{session.subjectCode}</Text>
               </View>
               <View className="flex-row justify-between">
-                <Text className="text-slate-400">Section</Text>
-                <Text className="text-white font-semibold">{session.section}</Text>
+                <Text className="text-sm" style={{ color: colors.textMuted }}>Section</Text>
+                <Text className="font-semibold" style={{ color: colors.text }}>{session.section}</Text>
               </View>
               <View className="flex-row justify-between">
-                <Text className="text-slate-400">Date & Time</Text>
-                <Text className="text-white font-semibold">
+                <Text className="text-sm" style={{ color: colors.textMuted }}>Date & Time</Text>
+                <Text className="font-semibold" style={{ color: colors.text }}>
                   {session.date} {session.time}
                 </Text>
               </View>
@@ -112,7 +115,7 @@ const ReviewSubmitScreen = () => {
           </Card>
 
           {/* Attendance Summary Cards */}
-          <Text className="text-slate-300 text-xs font-bold uppercase tracking-wider mb-3">
+          <Text className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: colors.textSecondary }}>
             Attendance Summary
           </Text>
 
@@ -180,12 +183,12 @@ const ReviewSubmitScreen = () => {
           )}
 
           {/* Attendance Rules */}
-          <Card className="bg-slate-800 border border-slate-700 mb-6">
-            <Text className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
+          <Card className="mb-6" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+            <Text className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: colors.textMuted }}>
               Important Notes
             </Text>
-            <View className="bg-slate-700/50 rounded-lg p-3">
-              <Text className="text-slate-300 text-xs leading-5">
+            <View className="rounded-lg p-3" style={{ backgroundColor: `${colors.bgTertiary}80` }}>
+              <Text className="text-xs leading-5" style={{ color: colors.textSecondary }}>
                 • This attendance record will be submitted to the academic system.
                 {'\n'}• Students absent will be flagged if below 75% threshold.
                 {'\n'}• All edits are logged with timestamps for audit purposes.
@@ -197,17 +200,16 @@ const ReviewSubmitScreen = () => {
       </ScrollView>
 
       {/* Bottom Action Bar */}
-      <View className="bg-slate-800 border-t border-slate-700 p-4 flex-row gap-3">
+      <View className="p-4 flex-row gap-3 border-t" style={{ backgroundColor: colors.bgCard, borderTopColor: colors.border }}>
         <Button
           title="Back to Attendance"
           onPress={() => navigation.goBack()}
-          className="flex-1 bg-slate-700"
+          style={{ backgroundColor: colors.bgTertiary }}
           disabled={isSubmitting}
         />
         <Button
           title={isSubmitting ? 'Submitting...' : 'Submit'}
           onPress={handleSubmit}
-          className="flex-1 bg-green-600"
           disabled={isSubmitting}
         />
       </View>

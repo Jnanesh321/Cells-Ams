@@ -1,12 +1,14 @@
 import React, { useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useAppTheme } from '../hooks/useAppTheme';
 import Card from '../components/Card';
 import Button from '../components/Button';
 
 const SuccessConfirmationScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const { colors } = useAppTheme();
 
   const stats = route.params?.stats || { present: 0, absent: 0, od: 0, total: 0 };
   const subjectName = route.params?.subjectName || '';
@@ -31,10 +33,10 @@ const SuccessConfirmationScreen = () => {
   );
 
   return (
-    <View className="flex-1 bg-slate-900">
+    <View className="flex-1" style={{ backgroundColor: colors.bg }}>
       {/* Header */}
-      <View className="bg-slate-800 border-b border-slate-700 px-4 pt-4 pb-3">
-        <Text className="text-white text-lg font-bold">Attendance Submitted</Text>
+      <View className="px-4 pt-4 pb-3 border-b" style={{ backgroundColor: colors.bgCard, borderBottomColor: colors.border }}>
+        <Text className="text-lg font-bold" style={{ color: colors.text }}>Attendance Submitted</Text>
       </View>
 
       <ScrollView className="flex-1 flex-row" contentContainerStyle={{ flexGrow: 1 }}>
@@ -45,7 +47,7 @@ const SuccessConfirmationScreen = () => {
           </View>
 
           {/* Success Message */}
-          <Card className="bg-gradient-to-r from-green-900 to-green-800 border-0 mb-4 w-full">
+          <Card className="border-0 mb-4 w-full">
             <View className="items-center">
               <Text className="text-green-100 text-base font-bold">Attendance Saved Successfully!</Text>
               <Text className="text-green-200 text-xs mt-2">
@@ -55,43 +57,43 @@ const SuccessConfirmationScreen = () => {
           </Card>
 
           {/* Summary Card */}
-          <Card className="bg-slate-800 border border-slate-700 mb-4 w-full">
-            <Text className="text-slate-300 text-xs font-bold uppercase tracking-wider mb-3">
+          <Card className="mb-4 w-full" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+            <Text className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: colors.textSecondary }}>
               Submission Summary
             </Text>
 
-            <View className="bg-slate-700 rounded-lg p-4">
+            <View className="rounded-lg p-4" style={{ backgroundColor: colors.bgTertiary }}>
               <View className="mb-3">
-                <Text className="text-slate-400 text-xs mb-1">Subject</Text>
-                <Text className="text-white font-bold text-base">{subjectName}</Text>
-                <Text className="text-slate-400 text-xs">{subjectCode} • Section {section}</Text>
+                <Text className="text-xs mb-1" style={{ color: colors.textMuted }}>Subject</Text>
+                <Text className="font-bold text-base" style={{ color: colors.text }}>{subjectName}</Text>
+                <Text className="text-xs" style={{ color: colors.textMuted }}>{subjectCode} • Section {section}</Text>
               </View>
 
-              <View className="bg-slate-600 h-px mb-3" />
+              <View className="h-px mb-3" style={{ backgroundColor: colors.border }} />
 
               <View className="flex-row justify-around mb-3">
                 <View className="items-center">
                   <Text className="text-green-400 font-bold text-2xl">{stats.present}</Text>
                   <Text className="text-green-400 text-xs">Present</Text>
                 </View>
-                <View className="bg-slate-600 w-px" />
+                <View className="w-px" style={{ backgroundColor: colors.border }} />
                 <View className="items-center">
                   <Text className="text-red-400 font-bold text-2xl">{stats.absent}</Text>
                   <Text className="text-red-400 text-xs">Absent</Text>
                 </View>
-                <View className="bg-slate-600 w-px" />
+                <View className="w-px" style={{ backgroundColor: colors.border }} />
                 <View className="items-center">
                   <Text className="text-amber-400 font-bold text-2xl">{stats.od}</Text>
                   <Text className="text-amber-400 text-xs">OD</Text>
                 </View>
               </View>
 
-              <View className="bg-slate-600 h-px mb-3" />
+              <View className="h-px mb-3" style={{ backgroundColor: colors.border }} />
 
               <View className="items-center">
-                <Text className="text-slate-400 text-xs mb-1">Session Attendance</Text>
-                <Text className="text-white font-bold text-xl">{attendancePercentage}%</Text>
-                <Text className="text-slate-400 text-xs mt-1">
+                <Text className="text-xs mb-1" style={{ color: colors.textMuted }}>Session Attendance</Text>
+                <Text className="font-bold text-xl" style={{ color: colors.text }}>{attendancePercentage}%</Text>
+                <Text className="text-xs mt-1" style={{ color: colors.textMuted }}>
                   {stats.present + stats.od} of {stats.total} students
                 </Text>
               </View>
@@ -99,7 +101,7 @@ const SuccessConfirmationScreen = () => {
           </Card>
 
           {/* Info Card */}
-          <Card className="bg-blue-900/20 border border-blue-700/30 mb-6 w-full">
+          <Card className="mb-6 w-full" style={{ backgroundColor: 'rgba(59,130,246,0.2)', borderColor: 'rgba(59,130,246,0.3)', borderWidth: 1 }}>
             <View className="flex-row gap-2">
               <Text className="text-blue-400 text-xl">ℹ️</Text>
               <View className="flex-1">
@@ -115,16 +117,16 @@ const SuccessConfirmationScreen = () => {
       </ScrollView>
 
       {/* Action Buttons */}
-      <View className="bg-slate-800 border-t border-slate-700 p-4 flex-row gap-3">
+      <View className="p-4 flex-row gap-3 border-t" style={{ backgroundColor: colors.bgCard, borderTopColor: colors.border }}>
         <Button
           title="Mark Another Subject"
           onPress={() => navigation.navigate('SubjectPicker')}
-          className="flex-1 bg-blue-600"
+          style={{ backgroundColor: '#3b82f6' }}
         />
         <Button
           title="Go to Dashboard"
           onPress={handleDone}
-          className="flex-1 bg-slate-700"
+          style={{ backgroundColor: colors.bgTertiary }}
         />
       </View>
     </View>

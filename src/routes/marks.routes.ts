@@ -31,4 +31,36 @@ router.get(
   asyncHandler(MarksController.deptMarks)
 );
 
+// =========== VTU IA Routes ===========
+
+router.post(
+  "/vtu/ia",
+  auth,
+  requireRole("FACULTY"),
+  asyncHandler(MarksController.upsertVTUIA)
+);
+
+router.get(
+  "/vtu/student/:usn",
+  auth,
+  requireRole("STUDENT", "PARENT", "FACULTY", "HOD", "PRINCIPAL"),
+  asyncHandler(requireOwnStudentData),
+  asyncHandler(MarksController.studentVTUIA)
+);
+
+router.get(
+  "/vtu/cie/:usn",
+  auth,
+  requireRole("STUDENT", "PARENT", "FACULTY", "HOD", "PRINCIPAL"),
+  asyncHandler(requireOwnStudentData),
+  asyncHandler(MarksController.studentVTUCIE)
+);
+
+router.post(
+  "/vtu/compute-cie",
+  auth,
+  requireRole("FACULTY", "HOD"),
+  asyncHandler(MarksController.computeVTUCIE)
+);
+
 export default router;

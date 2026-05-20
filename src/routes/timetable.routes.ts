@@ -8,6 +8,7 @@ const router = Router();
 
 router.get("/day", auth, asyncHandler(TimetableController.getDay));
 router.get("/week", auth, asyncHandler(TimetableController.getWeek));
+router.get("/faculty/:id", auth, asyncHandler(TimetableController.getFacultyTimetable));
 router.get("/periods", auth, asyncHandler(TimetableController.listPeriods));
 
 router.post("/entry", auth, requireRole("ADMIN", "PRINCIPAL", "HOD"), asyncHandler(TimetableController.create));

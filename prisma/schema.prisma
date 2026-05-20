@@ -15,6 +15,7 @@ enum Role {
   PRINCIPAL
   ADMIN
   ADMISSION_CELL
+  EXAM_CELL
 }
 
 enum AttendanceStatus {
@@ -84,6 +85,14 @@ model User {
   enteredVTUIAMarks              VTUIAMark[]            @relation("EnteredVTUIAMarks")
   vtuFinalizedCIE                VTUCIESummary[]        @relation("VTUFinalizedCIE")
 
+  // Question Paper & IA Marks System
+  createdQuestionPapers          IAQuestionPaper[]      @relation("CreatedQuestionPapers")
+  enteredIAStudentSubMarks       IAStudentSubMark[]     @relation("EnteredIAStudentSubMarks")
+  markedIAAbsentees              IAAbsentee[]           @relation("MarkedIAAbsentees")
+  enteredLabIAMarks              LabIAMark[]            @relation("EnteredLabIAMarks")
+  createdLabIAConfigs            LabIAConfig[]          @relation("CreatedLabIAConfigs")
+  notifications                  Notification[]
+
   @@map("users")
 }
 
@@ -107,6 +116,39 @@ model StudentProfile {
   batch     String @default("2021-2025")
   dateOfBirth DateTime? @db.Date
 
+  // Personal
+  fatherName       String?
+  motherName       String?
+  fatherOccupation String?
+  motherOccupation String?
+  fatherPhone      String?
+  motherPhone      String?
+  studentPhone     String?
+  permanentAddress String?
+  currentAddress   String?
+  bloodGroup       String?
+  nationality      String?  @default("Indian")
+  religion         String?
+  category         String?  // General, OBC, SC, ST
+
+  // Previous education
+  tenthMarks       Float?
+  tenthBoard       String?
+  tenthPassYear    Int?
+  pucMarks         Float?
+  pucBoard         String?
+  pucPassYear      Int?
+  cetRank          Int?
+  cetScore         Float?
+  diplomaMarks     Float?
+
+  // Additional
+  hobbies          String?
+  achievements     String?
+  isLateralEntry   Boolean  @default(false)
+  admissionType    String?
+  photoUrl         String?
+
   attendance           AttendanceRecord[]
   iaMarks              IAMark[]
   assignmentMarks      AssignmentMark[]
@@ -114,6 +156,11 @@ model StudentProfile {
   detentionRecords     DetentionRecord[]
   vtuIAMarks           VTUIAMark[]
   vtuCIESummaries      VTUCIESummary[]
+
+  // Question Paper & IA Marks System
+  iaSubMarks           IAStudentSubMark[]
+  iaAbsenteeRecords    IAAbsentee[]
+  labIAMarks           LabIAMark[]
 
   @@map("student_profiles")
 }
@@ -162,6 +209,11 @@ model Subject {
   timetableEntries TimetableEntry[]
   vtuIAMarks       VTUIAMark[]
   vtuCIESummaries  VTUCIESummary[]
+
+  questionPapers   IAQuestionPaper[]
+  iaAbsenteeRecords IAAbsentee[]
+  labIAMarks       LabIAMark[]
+  labIAConfigs     LabIAConfig[]
 
   @@map("subjects")
 }
@@ -569,4 +621,151 @@ model VTUCIESummary {
   @@unique([studentProfileId, subjectId])
   @@index([studentProfileId])
   @@map("vtu_cie_summaries")
+}
+
+// ========= QUESTION PAPER & IA MARKS SYSTEM =========
+
+model IAQuestionPaper {
+  id            Int      @id @default(autoincrement())
+  subjectId     Int
+  iaNumber      Int                    // 1, 2, or 3
+  semester      String
+  section       String
+  academicYear  String
+  totalMarks    Float    @default(50)
+  duration      Int      @default(90)  // minutes
+  isActive      Boolean  @default(true)
+  createdByUserId Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  subject    Subject       @relation(fields: [subjectId], references: [id])
+  createdBy  User          @relation("CreatedQuestionPapers", fields: [createdByUserId], references: [id])
+  questions  IAQuestion[]
+
+  @@unique([subjectId, iaNumber, section, academicYear])
+  @@index([subjectId])
+  @@map("ia_question_papers")
+}
+
+model IAQuestion {
+  id               Int      @id @default(autoincrement())
+  questionPaperId  Int
+  questionNumber   Int                    // 1, 2, 3, or 4
+  text             String?                // optional prompt text
+  maxMarks         Float    @default(25)
+  createdAt        DateTime @default(now())
+
+  questionPaper IAQuestionPaper @relation(fields: [questionPaperId], references: [id], onDelete: Cascade)
+  subQuestions  IASubQuestion[]
+
+  @@unique([questionPaperId, questionNumber])
+  @@map("ia_questions")
+}
+
+model IASubQuestion {
+  id          Int      @id @default(autoincrement())
+  questionId  Int
+  label       String                 // "a", "b", "c", "d"
+  maxMarks    Float    @default(6)
+  text        String?                // optional sub-question text
+  createdAt   DateTime @default(now())
+
+  question       IAQuestion          @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  studentSubMarks IAStudentSubMark[]
+
+  @@unique([questionId, label])
+  @@map("ia_sub_questions")
+}
+
+model IAStudentSubMark {
+  id               Int      @id @default(autoincrement())
+  studentProfileId Int
+  subQuestionId    Int
+  marksObtained    Float    @default(0)
+  enteredByUserId  Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  subQuestion    IASubQuestion  @relation(fields: [subQuestionId], references: [id], onDelete: Cascade)
+  enteredBy      User           @relation("EnteredIAStudentSubMarks", fields: [enteredByUserId], references: [id])
+
+  @@unique([studentProfileId, subQuestionId])
+  @@index([studentProfileId])
+  @@map("ia_student_sub_marks")
+}
+
+model IAAbsentee {
+  id               Int      @id @default(autoincrement())
+  studentProfileId Int
+  subjectId        Int
+  iaNumber         Int
+  markedByUserId   Int
+  createdAt        DateTime @default(now())
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  subject        Subject        @relation(fields: [subjectId], references: [id])
+  markedBy       User           @relation("MarkedIAAbsentees", fields: [markedByUserId], references: [id])
+
+  @@unique([studentProfileId, subjectId, iaNumber])
+  @@index([studentProfileId])
+  @@map("ia_absentees")
+}
+
+model LabIAMark {
+  id                   Int      @id @default(autoincrement())
+  studentProfileId     Int
+  subjectId            Int
+  component            String
+  marksObtained        Float    @default(0)
+  maxMarks             Float
+  externalExaminerName String?
+  enteredByUserId      Int
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  subject        Subject        @relation(fields: [subjectId], references: [id])
+  enteredBy      User           @relation("EnteredLabIAMarks", fields: [enteredByUserId], references: [id])
+
+  @@unique([studentProfileId, subjectId, component])
+  @@index([studentProfileId])
+  @@map("lab_ia_marks")
+}
+
+model LabIAConfig {
+  id              Int      @id @default(autoincrement())
+  subjectId       Int
+  component       String
+  maxMarks        Float
+  isExternal      Boolean  @default(false)
+  createdByUserId Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  createdBy User    @relation("CreatedLabIAConfigs", fields: [createdByUserId], references: [id])
+
+  @@unique([subjectId, component])
+  @@map("lab_ia_configs")
+}
+
+// ========= NOTIFICATION SYSTEM =========
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  title       String
+  body        String
+  type        String   // attendance, marks, detention, etc
+  isRead      Boolean  @default(false)
+  relatedId   Int?
+  relatedType String?  // "attendance", "marks", etc
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@map("notifications")
 }

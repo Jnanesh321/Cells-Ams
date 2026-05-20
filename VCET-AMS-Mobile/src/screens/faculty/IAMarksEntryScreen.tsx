@@ -1,307 +1,291 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import { useAuthStore } from '../../store/auth';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Alert, FlatList, Text, TextInput, TouchableOpacity, View,
+} from 'react-native';
+import { useRoute } from '@react-navigation/native';
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { getAttendanceSessionData, saveIAMarks } from '../../mock/backend';
+import API from '../../services/api';
 import Card from '../../components/Card';
-import { useSettingsStore } from '../../store/settingsStore';
-import { calculateCIE, VTU_RULES, getAttendanceWarningColor } from '../../utils/vtuRules';
+import { computeIAResult } from '../../utils/iaCalculation';
 
-type Student = {
+type SubQuestionCol = { id: number; label: string; maxMarks: number; questionNumber: number };
+type Row = {
   studentProfileId: number;
   usn: string;
   name: string;
-  existingMark?: number | null;
+  isAbsent: boolean;
+  marks: Record<number, string>;
 };
 
 export default function IAMarksEntryScreen() {
   const route = useRoute<any>();
-  const navigation = useNavigation<any>();
-  const { user } = useAuthStore();
   const { colors } = useAppTheme();
-  const iaMaxMarks = useSettingsStore((s) => s.settings.iaMaxMarks);
+
   const params = route.params ?? {};
-  const subjectId = params.subjectId;
+  const paperId = params.paperId;
   const subjectName = params.subjectName ?? 'Subject';
-  const section = params.section ?? 'A';
 
-  if (!subjectId) {
-    return (
-      <View className="flex-1 justify-center items-center p-4" style={{ backgroundColor: colors.bg }}>
-        <Text className="text-lg" style={{ color: colors.textMuted }}>Subject not specified</Text>
-        <Text className="text-sm mt-2" style={{ color: colors.textTertiary }}>Please select a subject first</Text>
-      </View>
-    );
-  }
-
-  const [students, setStudents] = useState<Student[]>([]);
-  const [marks, setMarks] = useState<Record<number, string>>({});
-  const [iaNumber, setIANumber] = useState(1);
-  const [index, setIndex] = useState(0);
+  const [subQuestions, setSubQuestions] = useState<SubQuestionCol[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-  const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
-    void fetchStudents();
-  }, [subjectId, section, iaNumber]);
-
-  const fetchStudents = async () => {
+    if (!paperId) return;
     setLoading(true);
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const res = await getAttendanceSessionData(subjectId, section, iaNumber);
-      const list: Student[] = res.data;
-      setStudents(list);
-      const existing: Record<number, string> = {};
-      list.forEach((s) => {
-        if (s.existingMark != null) existing[s.studentProfileId] = String(s.existingMark);
+    API.get(`/ia/marks/${paperId}`).then((res) => {
+      const data = res.data?.data ?? res.data;
+      const cols: SubQuestionCol[] = [];
+      for (const q of data?.paper?.questions ?? []) {
+        for (const sq of q.subQuestions ?? []) {
+          cols.push({ id: sq.id, label: sq.label, maxMarks: sq.maxMarks, questionNumber: q.questionNumber });
+        }
+      }
+      setSubQuestions(cols);
+
+      const studentRows: Row[] = (data?.rows ?? []).map((r: any) => {
+        const marks: Record<number, string> = {};
+        for (const [sqId, val] of Object.entries(r.marks ?? {})) {
+          marks[Number(sqId)] = String(val);
+        }
+        return {
+          studentProfileId: r.studentProfileId,
+          usn: r.usn,
+          name: r.name,
+          isAbsent: r.isAbsent ?? false,
+          marks,
+        };
       });
-      setMarks(existing);
-    } catch {
-      Alert.alert('Error', 'Could not load students');
-    } finally {
-      setLoading(false);
+      setRows(studentRows);
+    }).catch(() => {
+      Alert.alert('Error', 'Failed to load marks data');
+    }).finally(() => setLoading(false));
+  }, [paperId]);
+
+  const setMark = useCallback((studentProfileId: number, subQuestionId: number, value: string) => {
+    setRows((prev) =>
+      prev.map((r) =>
+        r.studentProfileId === studentProfileId
+          ? { ...r, marks: { ...r.marks, [subQuestionId]: value } }
+          : r
+      )
+    );
+  }, []);
+
+  const questionTotals = useMemo(() => {
+    const qNums = [...new Set(subQuestions.map((sq) => sq.questionNumber))].sort();
+    const totals: { qNum: number; cols: SubQuestionCol[]; studentTotals: Record<number, number> }[] = [];
+    for (const qNum of qNums) {
+      const cols = subQuestions.filter((sq) => sq.questionNumber === qNum);
+      const studentTotals: Record<number, number> = {};
+      for (const row of rows) {
+        let total = 0;
+        for (const col of cols) {
+          const val = parseFloat(row.marks[col.id] ?? '0');
+          if (!isNaN(val)) total += val;
+        }
+        studentTotals[row.studentProfileId] = total;
+      }
+      totals.push({ qNum, cols, studentTotals });
     }
-  };
+    return totals;
+  }, [subQuestions, rows]);
 
-  const current = useMemo(() => students[index], [students, index]);
-  const total = students.length;
+  const results = useMemo(() => {
+    return rows.map((row) => {
+      const subMarks = subQuestions.map((sq) => ({
+        label: sq.label,
+        maxMarks: sq.maxMarks,
+        marksObtained: row.isAbsent ? 0 : parseFloat(row.marks[sq.id] ?? '0') || 0,
+        questionNumber: sq.questionNumber,
+        questionMaxMarks: subQuestions
+          .filter((s) => s.questionNumber === sq.questionNumber)
+          .reduce((sum, s) => sum + s.maxMarks, 0),
+      }));
+      return computeIAResult({
+        usn: row.usn,
+        name: row.name,
+        isAbsent: row.isAbsent,
+        subMarks,
+        paperMaxMarks: 50,
+      });
+    });
+  }, [rows, subQuestions]);
 
-  const goNext = useCallback(() => {
-    if (index < total - 1) setIndex((i) => i + 1);
-  }, [index, total]);
-
-  const goPrev = useCallback(() => {
-    if (index > 0) setIndex((i) => i - 1);
-  }, [index]);
-
-  const setMark = useCallback((value: string) => {
-    if (!current) return;
-    const num = parseFloat(value);
-    if (value !== '' && (isNaN(num) || num < 0 || num > iaMaxMarks)) return;
-    setMarks((prev) => ({ ...prev, [current.studentProfileId]: value }));
-    setHasChanges(true);
-  }, [current]);
-
-  const handleSaveAll = async () => {
-    const entries = students
-      .map((s) => ({
-        studentProfileId: s.studentProfileId,
-        marksObtained: parseFloat(marks[s.studentProfileId] ?? '0'),
-      }))
-      .filter((e) => !isNaN(e.marksObtained));
-
-    if (entries.some((e) => e.marksObtained < 0 || e.marksObtained > iaMaxMarks)) {
-      Alert.alert('Validation', `Marks must be between 0 and ${iaMaxMarks}`);
-      return;
+  const handleSave = async () => {
+    const entries: { studentProfileId: number; subQuestionId: number; marksObtained: number }[] = [];
+    for (const row of rows) {
+      if (row.isAbsent) continue;
+      for (const sq of subQuestions) {
+        const val = parseFloat(row.marks[sq.id] ?? '0');
+        if (!isNaN(val)) {
+          entries.push({
+            studentProfileId: row.studentProfileId,
+            subQuestionId: sq.id,
+            marksObtained: val,
+          });
+        }
+      }
     }
 
     setSaving(true);
     try {
-      await saveIAMarks(subjectId, iaNumber, entries, iaMaxMarks);
-      Alert.alert('Saved', `IA${iaNumber} marks saved for ${entries.length} students`);
-      setHasChanges(false);
+      await API.put(`/ia/marks/${paperId}`, { entries });
+      Alert.alert('Saved', `Marks saved for ${entries.length} entries`);
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Save failed');
+      Alert.alert('Error', e?.response?.data?.message ?? 'Save failed');
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleGoToStudent = (idx: number) => {
-    if (hasChanges) {
-      Alert.alert('Unsaved Changes', 'Save before navigating?', [
-        { text: 'Discard', style: 'destructive', onPress: () => setIndex(idx) },
-        { text: 'Cancel', style: 'cancel' },
-      ]);
-    } else {
-      setIndex(idx);
     }
   };
 
   if (loading) {
     return (
       <View className="flex-1 justify-center items-center" style={{ backgroundColor: colors.bg }}>
-        <Text style={{ color: colors.textMuted }}>Loading students...</Text>
+        <Text style={{ color: colors.textMuted }}>Loading...</Text>
       </View>
     );
   }
 
-  if (!current) {
+  if (!paperId) {
     return (
       <View className="flex-1 justify-center items-center" style={{ backgroundColor: colors.bg }}>
-        <Text style={{ color: colors.textMuted }}>No students found</Text>
+        <Text style={{ color: colors.textMuted }}>No paper selected</Text>
       </View>
     );
   }
 
-  const markValue = marks[current.studentProfileId] ?? '';
-
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: colors.bg }} keyboardShouldPersistTaps="handled">
-      <View className="p-4">
-        {/* Header */}
-        <View className="mb-4">
-          <Text className="text-xs uppercase tracking-widest" style={{ color: colors.textMuted }}>IA Marks Entry</Text>
-          <Text className="text-lg font-bold mt-0.5" style={{ color: colors.text }}>{subjectName}</Text>
-          <Text className="text-sm" style={{ color: colors.textMuted }}>Section {section}</Text>
-        </View>
+    <View className="flex-1" style={{ backgroundColor: colors.bg }}>
+      <View className="p-4 pb-2">
+        <Text className="text-xs uppercase tracking-widest" style={{ color: colors.textMuted }}>
+          IA Marks Entry
+        </Text>
+        <Text className="text-lg font-bold mt-0.5" style={{ color: colors.text }}>{subjectName}</Text>
+      </View>
 
-        {/* IA Picker */}
-        <View className="flex-row gap-2 mb-4">
-          {[1, 2, 3].map((n) => (
-            <TouchableOpacity
-              key={n}
-              onPress={() => { setIndex(0); setIANumber(n); }}
-              className="flex-1 py-3 rounded-xl"
-              style={{ backgroundColor: iaNumber === n ? '#3b82f6' : colors.bgCard, borderColor: iaNumber === n ? '#3b82f6' : colors.border, borderWidth: iaNumber === n ? 0 : 1 }}
-            >
-              <Text className="text-sm font-bold text-center" style={{ color: iaNumber === n ? '#ffffff' : colors.textSecondary }}>IA {n}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Student Selector Tabs */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
-          <View className="flex-row gap-1.5">
-            {students.map((s, i) => (
-              <TouchableOpacity
-                key={s.studentProfileId}
-                onPress={() => handleGoToStudent(i)}
-                className="px-3 py-2 rounded-lg"
-                style={{ backgroundColor: i === index ? '#3b82f6' : colors.bgCard, borderColor: i === index ? '#3b82f6' : colors.border, borderWidth: i === index ? 0 : 1 }}
-              >
-                <Text className="text-xs font-mono" style={{ color: i === index ? '#ffffff' : colors.textSecondary }}>
-                  {s.usn.slice(-3)}
+      <FlatList
+        className="px-4"
+        data={rows}
+        keyExtractor={(r) => String(r.studentProfileId)}
+        ListHeaderComponent={
+          <View className="flex-row mb-2">
+            <View className="w-16" />
+            <View className="flex-1 flex-row">
+              {subQuestions.map((sq) => (
+                <View key={sq.id} className="flex-1 items-center">
+                  <Text className="text-[10px] font-bold" style={{ color: colors.textMuted }}>
+                    Q{sq.questionNumber}{sq.label}
+                  </Text>
+                </View>
+              ))}
+              {questionTotals.map((qt) => (
+                <View key={qt.qNum} className="w-10 items-center">
+                  <Text className="text-[10px] font-bold" style={{ color: colors.textMuted }}>
+                    Q{qt.qNum}
+                  </Text>
+                </View>
+              ))}
+              <View className="w-14 items-center">
+                <Text className="text-[10px] font-bold" style={{ color: colors.textMuted }}>
+                  Total
                 </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-
-        {/* Single Student Focus Card */}
-        <Card className="mb-4" style={{ backgroundColor: colors.bgCard, borderColor: '#1e40af', borderWidth: 2 }}>
-          {/* Student Info */}
-          <View className="items-center mb-6 pt-2">
-            <View className="w-16 h-16 rounded-full bg-blue-600 items-center justify-center mb-3">
-              <Text className="text-white text-xl font-bold">
-                {current.name.split(' ').map((s) => s[0]).join('').slice(0, 2)}
-              </Text>
-            </View>
-            <Text className="text-xl font-bold text-center" style={{ color: colors.text }}>{current.name}</Text>
-            <Text className="text-sm font-mono mt-1" style={{ color: colors.textMuted }}>
-              {current.usn} • {index + 1} / {total}
-            </Text>
-          </View>
-
-          {/* Progress Bar */}
-          <View className="h-2 rounded-full mb-6 overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
-            <View className="bg-blue-500 h-full rounded-full" style={{ width: `${((index + 1) / total) * 100}%` }} />
-          </View>
-
-          {/* Marks Input */}
-          <View className="items-center mb-6">
-            <Text className="text-sm mb-2" style={{ color: colors.textMuted }}>Enter Marks (max {iaMaxMarks})</Text>
-            <View className="flex-row items-center gap-4">
-              <TextInput
-                ref={inputRef}
-                className="rounded-2xl px-8 py-5 text-5xl font-bold text-center border-2 w-44"
-                style={{ backgroundColor: colors.bgTertiary, color: colors.text, borderColor: '#3b82f6' }}
-                value={markValue}
-                onChangeText={setMark}
-                keyboardType="decimal-pad"
-                maxLength={4}
-                autoFocus
-                selectTextOnFocus
-              />
-            </View>
-            <Text className="text-xs mt-2" style={{ color: colors.textTertiary }}>/ {iaMaxMarks} marks</Text>
-          </View>
-
-          {/* CIE Calculation */}
-          <View className="rounded-xl p-3 mb-4 border" style={{ backgroundColor: colors.bgTertiary, borderColor: colors.border }}>
-            <Text className="text-[10px] uppercase tracking-wider mb-2" style={{ color: colors.textMuted }}>VTU CIE Calculation</Text>
-            <View className="flex-row gap-2">
-              {[1, 2, 3].map((n) => {
-                const val = n === iaNumber ? (markValue ? parseFloat(markValue) : undefined) : undefined;
-                const color = val != null ? (val >= 20 ? '#10b981' : val >= 14 ? '#f59e0b' : '#ef4444') : colors.textMuted;
-                return (
-                  <View key={n} className="flex-1 rounded-lg p-2 items-center border" style={{ backgroundColor: colors.bgCard, borderColor: n === iaNumber ? '#3b82f6' : colors.border }}>
-                    <Text className="text-xs" style={{ color: colors.textMuted }}>IA{n}</Text>
-                    <Text className="text-sm font-bold mt-0.5" style={{ color }}>{val != null ? val : '-'}</Text>
-                  </View>
-                );
-              })}
-              <View className="flex-1 rounded-lg p-2 items-center border" style={{ backgroundColor: colors.bgCard, borderColor: colors.border }}>
-                <Text className="text-xs" style={{ color: colors.textMuted }}>Asgn</Text>
-                <Text className="text-sm font-bold mt-0.5 text-cyan-400">-</Text>
               </View>
             </View>
-            <View className="flex-row justify-between items-center mt-2 pt-2 border-t" style={{ borderTopColor: colors.border }}>
-              <Text className="text-xs" style={{ color: colors.textMuted }}>Expected CIE (best 2 IA + Asgn)</Text>
-              <Text className="text-sm font-bold" style={{ color: colors.text }}>
-                {markValue && !isNaN(parseFloat(markValue))
-                  ? `~${Math.min(parseFloat(markValue) + (current.existingMark ?? 0), iaMaxMarks)}/${VTU_RULES.CIE_TOTAL}`
-                  : 'Enter marks to calculate'}
-              </Text>
-            </View>
           </View>
-
-          {/* Navigation Buttons */}
-          <View className="flex-row gap-3 mb-2">
-            <TouchableOpacity
-              onPress={goPrev}
-              disabled={index === 0}
-              className="flex-1 py-4 rounded-xl items-center"
-              style={{ backgroundColor: colors.bgTertiary, opacity: index === 0 ? 0.5 : 1 }}
+        }
+        renderItem={({ item, index }) => {
+          const total = results[index]?.grandTotal ?? 0;
+          return (
+            <View
+              className="flex-row items-center mb-1 rounded-lg px-2 py-2"
+              style={{
+                backgroundColor: item.isAbsent ? '#450a0a' : index % 2 === 0 ? colors.bgCard : colors.bgTertiary,
+                borderColor: item.isAbsent ? '#dc2626' : 'transparent',
+                borderWidth: item.isAbsent ? 1 : 0,
+                opacity: item.isAbsent ? 0.6 : 1,
+              }}
             >
-              <Text className="text-base font-semibold" style={{ color: colors.textSecondary }}>◀ Previous</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={goNext}
-              disabled={index >= total - 1}
-              className="flex-1 py-4 rounded-xl items-center"
-              style={{ backgroundColor: index >= total - 1 ? colors.bgTertiary : '#3b82f6', opacity: index >= total - 1 ? 0.5 : 1 }}
-            >
-              <Text className="text-white text-base font-semibold">Next ▶</Text>
-            </TouchableOpacity>
-          </View>
-        </Card>
+              {/* Student Info */}
+              <View className="w-16">
+                <Text className="text-[10px] font-mono font-bold" style={{ color: item.isAbsent ? '#fca5a5' : colors.text }}>
+                  {item.usn.slice(-5)}
+                </Text>
+              </View>
 
-        {/* Quick Stats */}
-        <Card className="mb-4" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
-          <View className="flex-row justify-between">
-            <View className="items-center flex-1">
-              <Text className="text-xs" style={{ color: colors.textMuted }}>Entered</Text>
-              <Text className="text-lg font-bold" style={{ color: colors.text }}>
-                {Object.keys(marks).filter((k) => marks[Number(k)] !== '').length}
-              </Text>
-            </View>
-            <View className="items-center flex-1">
-              <Text className="text-xs" style={{ color: colors.textMuted }}>Pending</Text>
-              <Text className="text-yellow-400 text-lg font-bold">
-                {total - Object.keys(marks).filter((k) => marks[Number(k)] !== '').length}
-              </Text>
-            </View>
-            <View className="items-center flex-1">
-              <Text className="text-xs" style={{ color: colors.textMuted }}>IA</Text>
-              <Text className="text-blue-400 text-lg font-bold">{iaNumber}</Text>
-            </View>
-          </View>
-        </Card>
+              {/* Marks Inputs */}
+              <View className="flex-1 flex-row">
+                {subQuestions.map((sq) => {
+                  const val = item.marks[sq.id] ?? '';
+                  return (
+                    <View key={sq.id} className="flex-1 px-0.5">
+                      {item.isAbsent ? (
+                        <View className="h-8 rounded items-center justify-center bg-red-900">
+                          <Text className="text-red-300 text-[10px] font-bold">ABS</Text>
+                        </View>
+                      ) : (
+                        <TextInput
+                          className="h-8 rounded text-center text-xs font-bold border"
+                          style={{
+                            backgroundColor: colors.bgTertiary,
+                            color: colors.text,
+                            borderColor: colors.border,
+                          }}
+                          value={val}
+                          onChangeText={(v) => setMark(item.studentProfileId, sq.id, v)}
+                          keyboardType="decimal-pad"
+                          maxLength={4}
+                          selectTextOnFocus
+                        />
+                      )}
+                    </View>
+                  );
+                })}
 
-        {/* Save Button */}
-        <TouchableOpacity
-          onPress={handleSaveAll}
-          disabled={saving}
-          className="bg-green-600 rounded-xl py-4 items-center mb-8"
-        >
-          <Text className="text-white font-bold text-lg">{saving ? 'Saving...' : `Save All IA${iaNumber} Marks`}</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+                {/* Question Totals */}
+                {questionTotals.map((qt) => {
+                  const qTotal = qt.studentTotals[item.studentProfileId] ?? 0;
+                  return (
+                    <View key={qt.qNum} className="w-10 items-center justify-center">
+                      <Text className="text-[10px] font-bold" style={{ color: colors.textMuted }}>
+                        {item.isAbsent ? 0 : qTotal}
+                      </Text>
+                    </View>
+                  );
+                })}
+
+                {/* Grand Total */}
+                <View className="w-14 items-center justify-center">
+                  <Text
+                    className="text-xs font-bold"
+                    style={{ color: total >= 25 ? '#10b981' : total >= 14 ? '#f59e0b' : '#ef4444' }}
+                  >
+                    {item.isAbsent ? 0 : total}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          );
+        }}
+        ListFooterComponent={
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={saving}
+            className="bg-green-600 rounded-xl py-4 items-center mt-4 mb-8"
+          >
+            <Text className="text-white font-bold text-lg">
+              {saving ? 'Saving...' : 'Save All Marks'}
+            </Text>
+          </TouchableOpacity>
+        }
+        ListEmptyComponent={
+          <Card style={{ backgroundColor: colors.bgCard }}>
+            <Text className="text-sm text-center" style={{ color: colors.textMuted }}>
+              No students found
+            </Text>
+          </Card>
+        }
+      />
+    </View>
   );
 }

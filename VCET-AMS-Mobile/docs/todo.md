@@ -51,7 +51,7 @@
 
 ## 🟢 Low Priority / Polish
 
-- [ ] Enrich mock data — more students, realistic attendance, proper parent-ward links
+- [x] **Enrich mock data** — 172 students (from 58), 172 parents (from 6), 127+ attendance summaries, 128 detailed attendance records, 126 marks records. Updated `subjectAllocations.ts`, `faculty.ts`, `facultySubjects.ts` student rosters. `npx tsc --noEmit` passes clean.
 - [ ] Pull-to-refresh on all list screens (Attendance, Marks, Notices)
 - [ ] Consistent search/filter on all list screens
 - [ ] Loading states & error boundaries everywhere

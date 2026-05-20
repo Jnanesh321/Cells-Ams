@@ -6,6 +6,7 @@ import { mockStudents, mockAttendance } from '../../mock';
 import API from '../../services/api';
 import Loader from '../../components/Loader';
 import Card from '../../components/Card';
+import NotificationBell from '../../components/NotificationBell';
 
 export default function ParentDashboardScreen() {
   const { user } = useAuthStore();
@@ -13,6 +14,7 @@ export default function ParentDashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [apiAttendance, setApiAttendance] = useState<any[] | null>(null);
+  const [detention, setDetention] = useState<{ isDetained: boolean; exempted: boolean; reasons: string[] } | null>(null);
 
   const childUsn = useMemo(() => user?.wardUsn ?? user?.usn, [user]);
 
@@ -24,9 +26,15 @@ export default function ParentDashboardScreen() {
   const fetchAttendance = useCallback(async () => {
     if (!childUsn) return;
     try {
-      const res = await API.get(`/attendance/student/${childUsn}/summary`);
-      const data = Array.isArray(res.data?.data) ? res.data.data : [];
-      setApiAttendance(data);
+      const [attRes, detRes] = await Promise.all([
+        API.get(`/attendance/student/${childUsn}/summary`),
+        API.get(`/detention/student/${childUsn}`),
+      ]);
+      const attData = Array.isArray(attRes.data?.data) ? attRes.data.data : [];
+      setApiAttendance(attData);
+      const detData = Array.isArray(detRes.data?.data) ? detRes.data.data : [];
+      const current = detData[0] ?? null;
+      if (current?.isDetained) setDetention(current);
     } catch {
       const mock = (mockAttendance as any)[childUsn] ?? [];
       setApiAttendance(mock);
@@ -69,14 +77,35 @@ export default function ParentDashboardScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#06b6d4" />}
     >
       <View className="p-4">
-        <Card className="border-0 mb-4">
-          <Text className="text-cyan-100 text-xs uppercase tracking-widest">My Ward</Text>
-          <Text className="text-white text-2xl font-bold mt-1">{child.name}</Text>
-          <Text className="text-cyan-200 text-sm mt-1">
-            {child.usn} • {child.department} • Section {child.section}
-          </Text>
-          <Text className="text-cyan-200 text-xs mt-1">Semester {child.semester} • Year {child.year}</Text>
-        </Card>
+        <View className="flex-row justify-between items-start mb-4">
+          <Card className="border-0 flex-1">
+            <Text className="text-cyan-100 text-xs uppercase tracking-widest">My Ward</Text>
+            <Text className="text-white text-2xl font-bold mt-1">{child.name}</Text>
+            <Text className="text-cyan-200 text-sm mt-1">
+              {child.usn} • {child.department} • Section {child.section}
+            </Text>
+            <Text className="text-cyan-200 text-xs mt-1">Semester {child.semester} • Year {child.year}</Text>
+          </Card>
+          <NotificationBell />
+        </View>
+
+        {/* Detention Banner */}
+        {detention?.isDetained && !detention.exempted && (
+          <View className="mb-4 rounded-xl p-4 border-2" style={{ backgroundColor: '#450a0a', borderColor: '#dc2626' }}>
+            <Text className="text-sm font-bold text-red-300">⚠ DETENTION NOTICE</Text>
+            <Text className="text-xs mt-1 text-red-200">
+              Your ward is detained from SEE. Contact the HOD immediately.
+            </Text>
+            {detention.reasons.map((r, i) => (
+              <Text key={i} className="text-xs mt-0.5 text-red-300">• {r}</Text>
+            ))}
+          </View>
+        )}
+        {detention?.exempted && (
+          <View className="mb-4 rounded-xl p-4 border" style={{ backgroundColor: '#451a03', borderColor: '#d97706' }}>
+            <Text className="text-sm font-bold text-amber-300">Exemption granted. Ward may appear for SEE.</Text>
+          </View>
+        )}
 
         <View className="flex-row gap-3 mb-4">
           <Card className="flex-1" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>

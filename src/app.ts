@@ -18,6 +18,12 @@ import hodRoutes from "./routes/hod.routes";
 import counsellingRoutes from "./routes/counselling.routes";
 import admissionRoutes from "./routes/admission.routes";
 import emailRoutes from "./routes/email.routes";
+import iaRoutes from "./routes/ia.routes";
+import cieRoutes from "./routes/cie.routes";
+import detentionRoutes from "./routes/detention.routes";
+import notificationRoutes from "./routes/notification.routes";
+import subjectsRoutes from "./routes/subjects.routes";
+import studentRoutes from "./routes/student.routes";
 
 const app: Application = express();
 
@@ -65,6 +71,12 @@ app.use("/hod", hodRoutes);
 app.use("/counselling", counsellingRoutes);
 app.use("/admission", admissionRoutes);
 app.use("/email", emailRoutes);
+app.use("/ia", iaRoutes);
+app.use("/marks", cieRoutes);
+app.use("/detention", detentionRoutes);
+app.use("/notifications", notificationRoutes);
+app.use("/subjects", subjectsRoutes);
+app.use("/student", studentRoutes);
 
 /* --------------------------- 404 Handler --------------------------- */
 app.use(notFound);

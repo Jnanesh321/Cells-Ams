@@ -13,6 +13,7 @@ import { useAcademicDay } from '../../hooks/useAcademicDay';
 import { getStudentBirthday } from '../../mock/birthdays';
 import Card from '../../components/Card';
 import Loader from '../../components/Loader';
+import NotificationBell from '../../components/NotificationBell';
 
 type AttendanceSummaryItem = {
   subjectCode: string;
@@ -79,6 +80,20 @@ const DashboardScreen = () => {
   const [calendarEvents, setCalendarEvents] = useState<CalendarItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const [detention, setDetention] = useState<{
+    isDetained: boolean; exempted: boolean; reasons: string[];
+  } | null>(null);
+
+  useEffect(() => {
+    if (!user?.usn) return;
+    API.get(`/detention/student/${user.usn}`).then((res) => {
+      const data = res.data?.data ?? res.data;
+      const records = Array.isArray(data) ? data : [];
+      const current = records[0] ?? null;
+      if (current?.isDetained) setDetention(current);
+    }).catch(() => {});
+  }, [user?.usn]);
 
   const MOCK_ATTENDANCE: AttendanceSummaryItem[] = [
     { subjectCode: 'CS501', subjectName: 'Advanced Data Structures', present: 28, total: 30, percentage: 93.3 },
@@ -186,7 +201,27 @@ const DashboardScreen = () => {
         <Text className="text-xs uppercase tracking-[0.2em]" style={{ color: colors.textMuted }}>Student Dashboard</Text>
         <Text className="text-2xl font-bold mt-1" style={{ color: colors.text }}>Welcome, {user?.name ?? 'Student'}</Text>
         <Text className="text-sm mt-1" style={{ color: colors.textSecondary }}>USN {user?.usn ?? 'N/A'}</Text>
+        <NotificationBell />
       </View>
+
+      {/* Detention Banner */}
+      {detention?.isDetained && !detention.exempted && (
+        <View className="mb-4 rounded-xl p-4 border-2" style={{ backgroundColor: '#450a0a', borderColor: '#dc2626' }}>
+          <Text className="text-sm font-bold text-red-300">⚠ DETENTION NOTICE</Text>
+          <Text className="text-xs mt-1 text-red-200">
+            You are currently detained from SEE. Contact your HOD immediately.
+          </Text>
+          {detention.reasons.map((r, i) => (
+            <Text key={i} className="text-xs mt-0.5 text-red-300">• {r}</Text>
+          ))}
+        </View>
+      )}
+      {detention?.exempted && (
+        <View className="mb-4 rounded-xl p-4 border" style={{ backgroundColor: '#451a03', borderColor: '#d97706' }}>
+          <Text className="text-sm font-bold text-amber-300">Exemption granted. You may appear for SEE.</Text>
+          <Text className="text-xs mt-1 text-amber-200">Conditions apply — check with HOD.</Text>
+        </View>
+      )}
 
       {isBirthday && (
         <View className="bg-gradient-to-r from-pink-700 to-rose-700 rounded-xl px-4 py-4 mb-4">

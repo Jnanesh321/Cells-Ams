@@ -11,6 +11,7 @@ import PrincipalNavigator from './PrincipalNavigator';
 import AdminNavigator from './AdminNavigator';
 import ParentNavigator from './ParentNavigator';
 import AdmissionNavigator from './AdmissionNavigator';
+import ExamCellNavigator from './ExamCellNavigator';
 
 const Stack = createStackNavigator();
 
@@ -55,6 +56,7 @@ const AppNavigator = () => {
       PRINCIPAL: 'Principal',
       PARENT: 'Parent',
       ADMISSION_CELL: 'Admission',
+      EXAM_CELL: 'ExamCell',
     };
 
     const targetRoute = routeMap[userRole];
@@ -91,6 +93,7 @@ const AppNavigator = () => {
       <Stack.Screen name="Admin" component={AdminNavigator} />
       <Stack.Screen name="Parent" component={ParentNavigator} />
       <Stack.Screen name="Admission" component={AdmissionNavigator} />
+      <Stack.Screen name="ExamCell" component={ExamCellNavigator} />
     </Stack.Navigator>
   );
 };

@@ -6,6 +6,7 @@ import {
   bulkCreateTimetable,
   getTimetableForDay,
   getFullWeekTimetable,
+  getFacultyTimetable,
   removeTimetableEntry,
   updateTimetableEntry,
   getAllPeriods,
@@ -48,6 +49,16 @@ export class TimetableController {
       return ok(res, timetable);
     } catch (error: any) {
       return fail(res, error?.message ?? "Failed to fetch weekly timetable", 500);
+    }
+  }
+
+  static async getFacultyTimetable(req: Request, res: Response) {
+    try {
+      const id = z.coerce.number().int().positive().parse(req.params.id);
+      const slots = await getFacultyTimetable(id);
+      return ok(res, slots);
+    } catch (error: any) {
+      return fail(res, error?.message ?? "Failed to fetch faculty timetable", 500);
     }
   }
 

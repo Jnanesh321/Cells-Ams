@@ -1,5 +1,7 @@
 .aider*
 .env
+backend.err
+backend.log
 node_modules
 dist/
 .expo/

@@ -1,4 +1,4 @@
-export const mockUsers = {
+﻿export const mockUsers = {
   // Admin
   ADMIN: {
     id: 'ADMIN',
@@ -63,7 +63,7 @@ export const mockUsers = {
     designation: 'Assistant Professor',
   },
 
-  // Parent
+  // Parents (representative sample for testing login)
   PARENT01: {
     id: 'PARENT01',
     password: 'parent@123',
@@ -73,6 +73,171 @@ export const mockUsers = {
     department: 'CSE',
     usn: '4VP21CS001',
     wardUsn: '4VP21CS001',
+  },
+
+  PARENT02: {
+    id: 'PARENT02',
+    password: 'parent@123',
+    name: 'Aditya Kumar',
+    role: 'PARENT' as const,
+    email: 'parent.4vp21cs001@vcet.ac.in',
+    department: 'CSE',
+    usn: '4VP21CS001',
+    wardUsn: '4VP21CS001',
+  },
+
+  PARENT03: {
+    id: 'PARENT03',
+    password: 'parent@123',
+    name: 'Ravi Kumar',
+    role: 'PARENT' as const,
+    email: 'parent.4vp21ec001@vcet.ac.in',
+    department: 'ECE',
+    usn: '4VP21EC001',
+    wardUsn: '4VP21EC001',
+  },
+
+  PARENT04: {
+    id: 'PARENT04',
+    password: 'parent@123',
+    name: 'Ankit Sharma',
+    role: 'PARENT' as const,
+    email: 'parent.4vp22cs001@vcet.ac.in',
+    department: 'CSE',
+    usn: '4VP22CS001',
+    wardUsn: '4VP22CS001',
+  },
+
+  PARENT05: {
+    id: 'PARENT05',
+    password: 'parent@123',
+    name: 'Farhan Ahmed',
+    role: 'PARENT' as const,
+    email: 'parent.4vp22ec001@vcet.ac.in',
+    department: 'ECE',
+    usn: '4VP22EC001',
+    wardUsn: '4VP22EC001',
+  },
+
+  PARENT06: {
+    id: 'PARENT06',
+    password: 'parent@123',
+    name: 'Ishaan Verma',
+    role: 'PARENT' as const,
+    email: 'parent.4vp22me001@vcet.ac.in',
+    department: 'MECH',
+    usn: '4VP22ME001',
+    wardUsn: '4VP22ME001',
+  },
+
+  PARENT07: {
+    id: 'PARENT07',
+    password: 'parent@123',
+    name: 'Kavya Singh',
+    role: 'PARENT' as const,
+    email: 'parent.4vp23cs001@vcet.ac.in',
+    department: 'CSE',
+    usn: '4VP23CS001',
+    wardUsn: '4VP23CS001',
+  },
+
+  PARENT08: {
+    id: 'PARENT08',
+    password: 'parent@123',
+    name: 'Rahul Pai',
+    role: 'PARENT' as const,
+    email: 'parent.4vp23ec001@vcet.ac.in',
+    department: 'ECE',
+    usn: '4VP23EC001',
+    wardUsn: '4VP23EC001',
+  },
+
+  PARENT09: {
+    id: 'PARENT09',
+    password: 'parent@123',
+    name: 'Umesh Nayak',
+    role: 'PARENT' as const,
+    email: 'parent.4vp23me001@vcet.ac.in',
+    department: 'MECH',
+    usn: '4VP23ME001',
+    wardUsn: '4VP23ME001',
+  },
+
+  PARENT10: {
+    id: 'PARENT10',
+    password: 'parent@123',
+    name: 'Aarav Iyer',
+    role: 'PARENT' as const,
+    email: 'parent.4vp24cs001@vcet.ac.in',
+    department: 'CSE',
+    usn: '4VP24CS001',
+    wardUsn: '4VP24CS001',
+  },
+
+  PARENT11: {
+    id: 'PARENT11',
+    password: 'parent@123',
+    name: 'Ganesh Prabhu',
+    role: 'PARENT' as const,
+    email: 'parent.4vp24ec001@vcet.ac.in',
+    department: 'ECE',
+    usn: '4VP24EC001',
+    wardUsn: '4VP24EC001',
+  },
+
+  PARENT12: {
+    id: 'PARENT12',
+    password: 'parent@123',
+    name: 'Jyothi Shetty',
+    role: 'PARENT' as const,
+    email: 'parent.4vp24me001@vcet.ac.in',
+    department: 'MECH',
+    usn: '4VP24ME001',
+    wardUsn: '4VP24ME001',
+  },
+
+  PARENT13: {
+    id: 'PARENT13',
+    password: 'parent@123',
+    name: 'Manjunath Prabhu',
+    role: 'PARENT' as const,
+    email: 'parent.4vp25cs001@vcet.ac.in',
+    department: 'CSE',
+    usn: '4VP25CS001',
+    wardUsn: '4VP25CS001',
+  },
+
+  PARENT14: {
+    id: 'PARENT14',
+    password: 'parent@123',
+    name: 'Pooja Hegde',
+    role: 'PARENT' as const,
+    email: 'parent.4vp25ec001@vcet.ac.in',
+    department: 'ECE',
+    usn: '4VP25EC001',
+    wardUsn: '4VP25EC001',
+  },
+
+  PARENT15: {
+    id: 'PARENT15',
+    password: 'parent@123',
+    name: 'Tanmay Shet',
+    role: 'PARENT' as const,
+    email: 'parent.4vp25me001@vcet.ac.in',
+    department: 'MECH',
+    usn: '4VP25ME001',
+    wardUsn: '4VP25ME001',
+  },
+
+  PARENT16: {
+    id: 'PARENT16',
+    password: 'parent@123',
+    name: 'Aditi Sharma',
+    role: 'PARENT' as const,
+    email: 'parent.4vp25ai001@vcet.ac.in',
+    department: 'AIML',
+    usn: '4VP25AI001',
+    wardUsn: '4VP25AI001',
   },
 
   // Admission Cell
@@ -88,7 +253,6 @@ export const mockUsers = {
 };
 
 export const isStudentUSN = (id: string): boolean => {
-  // VTU USN format: 4VP21CS001
   return /^\d{1}[A-Z]{2}\d{2}[A-Z]{2}\d{3}$/.test(id);
 };
 
@@ -134,7 +298,7 @@ export function getMockUser(id: string, password: string, loginMode?: 'student' 
     return null;
   }
 
-  // Parent check — allow USN-based parent login when in staff mode
+  // Parent check ΓÇö allow USN-based parent login when in staff mode
   if (isStudentUSN(trimmedId) && loginMode === 'staff') {
     const { mockParents } = require('./parents');
     const parent = mockParents.find((p: any) => p.wardUsn === trimmedId);

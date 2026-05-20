@@ -15,6 +15,7 @@ import VTUIAMarksEntryScreen from '../screens/faculty/VTUIAMarksEntryScreen';
 import FacultyNotesScreen from '../screens/faculty/NotesScreen';
 import FacultyProfileScreen from '../screens/faculty/FacultyProfileScreen';
 import FacultyTimetableScreen from '../screens/faculty/TimetableScreen';
+import IAMarksEntryScreen from '../screens/faculty/IAMarksEntryScreen';
 import CounsellingDashboardScreen from '../screens/faculty/CounsellingDashboardScreen';
 import CounsellingStudentDetailScreen from '../screens/faculty/CounsellingStudentDetailScreen';
 import CounsellingSessionFormScreen from '../screens/faculty/CounsellingSessionFormScreen';
@@ -39,6 +40,7 @@ const MarksStackNavigator = () => (
   <MarksStack.Navigator screenOptions={{ headerShown: false }}>
     <MarksStack.Screen name="MarksSubjectPicker" component={MarksSubjectPickerScreen} />
     <MarksStack.Screen name="VTUIAMarksEntry" component={VTUIAMarksEntryScreen} />
+    <MarksStack.Screen name="IAMarksEntry" component={IAMarksEntryScreen} />
   </MarksStack.Navigator>
 );
 

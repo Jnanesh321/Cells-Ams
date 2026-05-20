@@ -11,6 +11,8 @@ import HodProfileScreen from '../screens/hod/HodProfileScreen';
 import SubjectAssignmentScreen from '../screens/hod/SubjectAssignmentScreen';
 import HodCounsellingSummaryScreen from '../screens/hod/HodCounsellingSummaryScreen';
 import CounsellorAssignmentScreen from '../screens/hod/CounsellorAssignmentScreen';
+import CIEManagementScreen from '../screens/hod/CIEManagementScreen';
+import DetentionScreen from '../screens/hod/DetentionScreen';
 
 const CounsellingStack = createStackNavigator();
 
@@ -36,6 +38,8 @@ const HodNavigator = () => {
             Assignments: focused ? 'checkbox' : 'checkbox-outline',
             Counselling: focused ? 'chatbubbles' : 'chatbubbles-outline',
             Faculty: focused ? 'people' : 'people-outline',
+            CIE: focused ? 'checkmark-circle' : 'checkmark-circle-outline',
+            Detention: focused ? 'warning' : 'warning-outline',
             Reports: focused ? 'document-text' : 'document-text-outline',
             Profile: focused ? 'person' : 'person-outline',
           };
@@ -62,6 +66,8 @@ const HodNavigator = () => {
       <Tab.Screen name="Dashboard" component={HodDashboardScreen} options={{ tabBarLabel: 'Dashboard' }} />
       <Tab.Screen name="Counselling" component={CounsellingStackNavigator} options={{ tabBarLabel: 'Counselling' }} />
       <Tab.Screen name="Analytics" component={HodAnalyticsScreen} options={{ tabBarLabel: 'Analytics' }} />
+      <Tab.Screen name="CIE" component={CIEManagementScreen} options={{ tabBarLabel: 'CIE' }} />
+      <Tab.Screen name="Detention" component={DetentionScreen} options={{ tabBarLabel: 'Detention' }} />
       <Tab.Screen name="Assignments" component={SubjectAssignmentScreen} options={{ tabBarLabel: 'Assignments' }} />
       <Tab.Screen name="Faculty" component={HodFacultyScreen} options={{ tabBarLabel: 'Faculty' }} />
       <Tab.Screen name="Reports" component={HodReportsScreen} options={{ tabBarLabel: 'Reports' }} />

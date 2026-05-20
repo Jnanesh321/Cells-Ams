@@ -1,33 +1,40 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, Text, View, RefreshControl, TouchableOpacity } from 'react-native';
-import API from '../../services/api';
-import { useAuthStore } from '../../store/authStore';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  FlatList, Text, View, RefreshControl, ActivityIndicator,
+} from 'react-native';
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { getDayName, getFullWeekTimetable } from '../../mock/timetable';
+import { useAuthStore } from '../../store/auth';
+import API from '../../services/api';
 import Card from '../../components/Card';
-import Loader from '../../components/Loader';
-import type { TimetableEntry } from '../../types';
 
-const DAY_NUMBERS = [1, 2, 3, 4, 5, 6];
+type Slot = {
+  day: string;
+  startTime: string;
+  endTime: string;
+  subjectName: string;
+  subjectCode: string;
+  section: string;
+  room?: string;
+};
+
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default function FacultyTimetableScreen() {
-  const { user } = useAuthStore();
   const { colors } = useAppTheme();
-  const [weekData, setWeekData] = useState<Record<number, TimetableEntry[]>>({});
+  const { user } = useAuthStore();
+  const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedDay, setSelectedDay] = useState(new Date().getDay() || 7);
-
-  const displayDay = selectedDay <= 6 ? selectedDay : 1;
 
   const fetchTimetable = useCallback(async () => {
     try {
-      const res = await API.get('/timetable/week', { params: { section: user?.section ?? 'A' } });
-      setWeekData(res.data.data);
+      const res = await API.get(`/timetable/faculty/${user?.id ?? ''}`);
+      const data = res.data?.data ?? res.data ?? [];
+      setSlots(Array.isArray(data) ? data : []);
     } catch {
-      setWeekData(getFullWeekTimetable(user?.section ?? 'A'));
+      setSlots([]);
     }
-  }, [user?.section]);
+  }, [user?.id]);
 
   useEffect(() => {
     setLoading(true);
@@ -39,85 +46,59 @@ export default function FacultyTimetableScreen() {
     void fetchTimetable().finally(() => setRefreshing(false));
   }, [fetchTimetable]);
 
-  const currentEntries = weekData[displayDay] ?? [];
-
-  const dayTabs = useMemo(() =>
-    DAY_NUMBERS.map((d) => ({
-      day: d,
-      label: getDayName(d),
-      hasClass: (weekData[d]?.length ?? 0) > 0,
-    })), [weekData]);
-
-  if (loading) return <Loader />;
+  if (loading) {
+    return (
+      <View className="flex-1 justify-center items-center" style={{ backgroundColor: colors.bg }}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.bg }}>
       <View className="p-4 pb-2">
         <Text className="text-xs uppercase tracking-widest" style={{ color: colors.textMuted }}>Timetable</Text>
-        <Text className="text-2xl font-bold mt-1" style={{ color: colors.text }}>Faculty Schedule</Text>
-        <Text className="text-sm mt-1" style={{ color: colors.textSecondary }}>{user?.name}</Text>
+        <Text className="text-lg font-bold mt-1" style={{ color: colors.text }}>{user?.name}</Text>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-4 mb-3">
-        <View className="flex-row gap-2">
-          {dayTabs.map((tab) => (
-            <TouchableOpacity
-              key={tab.day}
-              onPress={() => setSelectedDay(tab.day)}
-              className={`px-5 py-2.5 rounded-full ${displayDay === tab.day ? 'bg-indigo-600' : tab.hasClass ? 'bg-slate-800' : 'bg-slate-900'}`}
-              style={displayDay !== tab.day ? { borderColor: colors.border, borderWidth: 1 } : {}}
-            >
-              <Text className={`text-sm font-semibold ${displayDay === tab.day ? 'text-white' : tab.hasClass ? 'text-slate-200' : 'text-slate-600'}`}>
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
-
-      <ScrollView
-        className="flex-1 px-4"
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accentFaculty} />}
-      >
-        <Text className="text-sm mb-3 font-semibold" style={{ color: colors.textMuted }}>
-          {getDayName(displayDay)} — {currentEntries.length > 0 ? `${currentEntries.length} periods` : 'No classes'}
-        </Text>
-
-        {currentEntries.length > 0 ? (
-          currentEntries.map((entry) => (
-            <Card key={entry.id} className="mb-2.5" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
-              <View className="flex-row items-center">
-                <View className="items-center justify-center w-16 py-2 mr-3">
-                  <Text className="text-xs font-bold text-indigo-400">{entry.period.startTime}</Text>
-                  <Text className="text-[10px] text-slate-500 mt-0.5">{entry.period.endTime}</Text>
-                </View>
-                <View className="w-px h-12 mx-2" style={{ backgroundColor: colors.border }} />
-                <View className="flex-1 py-2">
-                  <Text className="font-semibold text-sm" style={{ color: colors.text }}>
-                    {entry.subject?.name ?? 'Free Period'}
-                  </Text>
-                  {entry.subject && (
-                    <Text className="text-xs mt-0.5 font-mono" style={{ color: colors.textMuted }}>
-                      {entry.subject.code} • {entry.subject.credits} credits • Sec {entry.section}
-                    </Text>
-                  )}
-                </View>
-                <View className="rounded-lg px-2.5 py-1" style={{ backgroundColor: colors.bgTertiary }}>
-                  <Text className="text-[10px] font-medium" style={{ color: colors.textTertiary }}>
-                    {entry.period.name}
-                  </Text>
-                </View>
-              </View>
-            </Card>
-          ))
-        ) : (
-          <Card>
-            <Text className="text-sm text-center" style={{ color: colors.textMuted }}>No classes scheduled for this day</Text>
+      <FlatList
+        className="px-4"
+        data={DAYS}
+        keyExtractor={(d) => d}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" />}
+        renderItem={({ item: day }) => {
+          const daySlots = slots.filter((s) => s.day === day).sort((a, b) => a.startTime.localeCompare(b.startTime));
+          if (daySlots.length === 0) return null;
+          return (
+            <View className="mb-4">
+              <Text className="text-sm font-bold mb-2" style={{ color: colors.text }}>{day}</Text>
+              {daySlots.map((slot, i) => (
+                <Card key={i} className="mb-1" style={{ backgroundColor: colors.bgCard, borderColor: colors.border, borderWidth: 1 }}>
+                  <View className="flex-row justify-between items-center">
+                    <View className="flex-1">
+                      <Text className="font-bold text-sm" style={{ color: colors.text }}>{slot.subjectName}</Text>
+                      <Text className="text-xs" style={{ color: colors.textMuted }}>{slot.subjectCode} · {slot.section}</Text>
+                    </View>
+                    <View className="items-end">
+                      <Text className="text-xs font-bold" style={{ color: colors.textSecondary }}>
+                        {slot.startTime}–{slot.endTime}
+                      </Text>
+                      {slot.room && (
+                        <Text className="text-[10px]" style={{ color: colors.textMuted }}>{slot.room}</Text>
+                      )}
+                    </View>
+                  </View>
+                </Card>
+              ))}
+            </View>
+          );
+        }}
+        ListEmptyComponent={
+          <Card style={{ backgroundColor: colors.bgCard }}>
+            <Text className="text-sm text-center" style={{ color: colors.textMuted }}>No timetable data</Text>
           </Card>
-        )}
-
-        <View className="h-6" />
-      </ScrollView>
+        }
+      />
     </View>
   );
 }
